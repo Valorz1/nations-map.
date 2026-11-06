@@ -4,7 +4,7 @@ An interactive political map of an invented world, traced from a hand-drawn penc
 
 > **This is my brother's project.** He invented this world and drew the original map, including the nations, rulers, wars, lore and characters. I'm just helping by putting it online and keeping the code up to date.
 
-**View the map:** https://valorz1.github.io/nations-map/
+**View the map:** https://valorz1.github.io/nations-map./
 
 Works in any modern browser on a computer, phone or iPad. No install needed.
 
