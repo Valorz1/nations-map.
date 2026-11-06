@@ -2,6 +2,8 @@
 
 An interactive political map of an invented world, traced from a hand-drawn pencil sketch.
 
+> **This is my brother's project.** He invented this world and drew the original map, including the nations, rulers, wars, lore and characters. I'm just helping by putting it online and keeping the code up to date.
+
 **View the map:** https://valorz1.github.io/nations-map/
 
 Works in any modern browser on a computer, phone or iPad. No install needed.
@@ -63,6 +65,11 @@ git add index.html
 git commit -m "Update map"
 git push
 ```
+
+## Credits
+
+- **Creator:** my brother. The world, the hand-drawn map, the nations, the lore and the characters are all his.
+- **Helper:** me (Valorz1). I look after the GitHub repo and the website.
 
 ## Files
 
