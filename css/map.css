@@ -1,0 +1,62 @@
+/* ==========================================================================
+   MAP — the hand-drawn atlas itself.
+   These rules are carried over unchanged from the original page. The custom
+   properties the map relies on are pinned here, on the SVG, so that nothing in
+   the surrounding interface's theme can ever alter how the map is drawn.
+   ========================================================================== */
+svg#map{
+  --accent:#e2b04a;--line:#3b4252;
+  --display:"Spectral SC", Georgia, serif;--serif:"Spectral", Georgia, serif;
+  --ui:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+svg#map{width:100%;height:100%;display:block;cursor:grab;user-select:none;-webkit-user-select:none;font-size:16px;line-height:normal}
+svg#map.dragging{cursor:grabbing}
+.region,.feat{outline:none}
+.feat{cursor:pointer}
+.feat:hover path{stroke:#b07a12;stroke-width:2}
+.region{cursor:pointer;transition:filter .2s}
+.region:hover{filter:brightness(1.05) saturate(1.15)}
+svg.focus .region:not(.on){filter:saturate(.35) brightness(1.06)}
+svg.focus .region:not(.on):hover{filter:saturate(.7) brightness(1.06)}
+.border{fill:none;stroke:var(--line);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round;pointer-events:none}
+.border-under{fill:none;stroke:#fff;stroke-width:4.5;opacity:.55;stroke-linejoin:round;pointer-events:none}
+.sel{fill:none;stroke:var(--accent);stroke-width:5;stroke-linejoin:round;pointer-events:none}
+.lbl{font-family:var(--display);fill:#262b36;paint-order:stroke;stroke:rgba(255,255,255,.78);stroke-width:4px;stroke-linejoin:round;letter-spacing:.08em;text-anchor:middle;pointer-events:none;font-weight:600}
+.dis{font:600 9.5px var(--ui);letter-spacing:.12em;fill:#7a2e3e;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:#fff;stroke-width:2.5px}
+.note{font-family:var(--serif);font-style:italic;fill:#4a4f5c;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:rgba(255,255,255,.7);stroke-width:3px}
+.mk circle{fill:#fff;stroke:#2c3240;stroke-width:1.6}
+.mk text{font:600 15px var(--mono);fill:#1f2430;text-anchor:middle;dominant-baseline:central}
+.mk,.tag{pointer-events:none}
+.tag rect.o{fill:#fffdf7;stroke:#2c3240;stroke-width:1.4}
+.tag .k{font:600 11px var(--ui);letter-spacing:.12em;fill:#555c6b}
+.tag .v{font:600 17px var(--mono);fill:#1c212c}
+.tag .me{font:500 12.5px var(--mono);fill:#2c3240}
+.compass .cr-l{font:600 17px "Spectral SC",serif;fill:#2c3240;text-anchor:middle;dominant-baseline:central;letter-spacing:.04em}
+.compass .cr-l.n{font-size:22px;fill:#b0452f}
+.grid line{stroke:#7d8699;stroke-width:.6;stroke-dasharray:2 7;opacity:.55}
+.gridlbl{font:500 13px var(--mono);fill:#8f98aa;text-anchor:middle;dominant-baseline:central}
+.hide-stats .tag,.hide-marks .mk,.hide-notes .note,.hide-notes .dis,.hide-grid .grid{display:none}
+
+/* border editor */
+svg.editing{cursor:crosshair}
+svg.editing .border{stroke:#b0452f;stroke-width:2.4}
+svg.editing .region:hover{filter:none}
+.bcur{fill:rgba(226,176,74,.12);stroke:#b07a12;stroke-width:1.5;stroke-dasharray:4 3;pointer-events:none}
+
+/* wars & alliances drawn on the map */
+.rel{pointer-events:none}
+.rel .rl-u{fill:none;stroke:#fff;stroke-width:8;opacity:.85;stroke-linecap:round}
+.rel .rl{fill:none;stroke-width:4;stroke-linecap:round}
+.rel .war .rl{stroke:#c0392b;stroke-dasharray:14 10}
+.rel .ally .rl{stroke:#2563eb}
+.rel .rl-end{stroke:#fff;stroke-width:2}
+.rel .war .rl-end,.rel .war .rl-mid{fill:#c0392b}
+.rel .ally .rl-end,.rel .ally .rl-mid{fill:#2563eb}
+.rel .rl-mid{stroke:#fff;stroke-width:2.5}
+.rel .rl-ico{stroke:#fff;stroke-width:2.6;stroke-linecap:round}
+.hide-rel .rel{display:none}
+
+/* viewing a past moment on the timeline */
+body.past svg#map{filter:sepia(.25)}
+
+@media (prefers-reduced-motion:reduce){.region{transition:none}}

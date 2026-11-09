@@ -19,16 +19,18 @@ Works in any modern browser on a computer, phone or iPad. No install needed.
 
 ## Features
 
-| Feature | What it does |
+| Section | What it does |
 |---|---|
-| All nations | Searchable list, sortable by Rate, Military, Economy, Capitals or A–Z |
-| Nation panel | Ratings and rank, government, capitals, characters, wars and alliances, lore |
-| Power Rankings | Bar chart comparing every nation's Rate, Military and Economy |
-| Wars & alliances | Red dashed lines for wars, solid blue lines for alliances |
-| Characters | Rulers and heroes such as Shero and Leon, with portraits |
-| Timeline | Saved moments of the map. Slide between them to watch borders change |
-| Edit borders | Drag any border to reshape the neighbouring nations |
-| Layers | Turn ratings, capitals, notes, wars and the grid on or off |
+| Overview | The world at a glance: great powers, balance of power, current wars and alliances, map key |
+| Nations | Searchable index of every nation, territory and movement, filterable and sortable |
+| Nation dossier | Emblem, rank, power cards, capitals and infrastructure, government, people, relations, lore and power over time |
+| Rankings | Overall power rankings, Rate / Military / Economy leaderboards, infrastructure table and side-by-side comparison of two nations |
+| Characters | Gallery and profiles of rulers and heroes: portrait, biography, achievements, political position, historical importance |
+| Diplomacy | Relations matrix, current and historical wars, alliances, outcomes and changes over time |
+| History | Archive of saved moments with map snapshots, territorial changes, power changes and rulers of the day |
+| Encyclopedia | Browse or search nations, characters, governments, wars, alliances, capitals and events |
+| Map tools | Zoom, layers, map key, timeline (slide between moments) and border editing |
+| Search | Press `/` or Ctrl+K anywhere to search everything |
 
 ## Nations and governments
 
@@ -50,21 +52,37 @@ Works in any modern browser on a computer, phone or iPad. No install needed.
 
 ## Using it
 
-- **Tap a nation** on the map to open its panel
+- **Tap a nation** on the map to open its dossier
 - **Drag** to move around, and **pinch or scroll** to zoom
 - On a phone or iPad, drag the bottom sheet up or down to resize it
+- Keyboard: `/` search, `1`–`7` sections, `T` timeline, `L` layers, `?` all shortcuts
 
 ## Saving changes
 
-This GitHub Pages copy is a **snapshot**. You can explore and try edits, but they reset when the page is closed.
+Edits (ratings, borders, lore, governments, wars, timeline, characters) are **saved automatically in your browser**.
+To publish them for everyone:
 
-To update the live site, replace `index.html` and push:
+1. Open **Your data** (the database icon, top right) and choose **Export world.json**
+2. Replace `data/world.json` in this repo with the downloaded file
+3. Commit and push:
 
 ```bash
-git add index.html
-git commit -m "Update map"
+git add data/world.json
+git commit -m "Update the world"
 git push
 ```
+
+**Import** loads a world.json into your browser, and **Discard my changes** returns to the published version.
+
+## Running it locally
+
+The page loads its data files, so open it through a small local server rather than double-clicking `index.html`:
+
+```bash
+python -m http.server
+```
+
+Then visit http://localhost:8000.
 
 ## Credits
 
@@ -73,6 +91,13 @@ git push
 
 ## Files
 
-- `index.html`: the whole map in one file (no other files or setup needed)
-- `README.md`: this file
-- `LICENSE`: MIT licence
+- `index.html`: page structure
+- `css/`: `tokens.css` (design system), `map.css` (the map's own styles, unchanged), `layout.css`, `components.css`, `views.css`
+- `js/main.js`: starts the app; `js/store.js` loading and saving; `js/model.js` derived facts and rankings; `js/search.js` search index
+- `js/map/`: the map engine (`engine.js`), border editor (`editor.js`) and timeline (`timeline.js`)
+- `js/ui/` and `js/views/`: the interface and each section
+- `data/geo.json`: map geometry traced from the sketch
+- `data/nations.json`: every nation, territory and movement as drawn on the sketch
+- `data/world.json`: the editable world (ratings, borders, lore, governments, wars and alliances, timeline, characters)
+- `assets/emblem.svg`: site emblem
+- `README.md`, `LICENSE`
