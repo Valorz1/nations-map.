@@ -1,41 +1,61 @@
-# Political Map of the Nations
+# 🌍 Political Map of the Nations
 
-An interactive political map of an invented world, traced from a hand-drawn pencil sketch.
+An interactive political map of an original fictional world, brought to life from a hand-drawn pencil sketch.
 
-> **This is my brother's project.** He invented this world and drew the original map, including the nations, rulers, wars, lore and characters. I'm just helping by putting it online and keeping the code up to date.
+Explore nations, governments, military powers, economies, rivalries, alliances, characters and the history of a world created entirely from imagination.
 
-**View the map:** https://valorz1.github.io/nations-map./
+**This is my brother's world.**
 
-Works in any modern browser on a computer, phone or iPad. No install needed.
+He created the fictional world, drew the original map and invented its nations, rulers, wars, lore and characters. I'm helping bring his creation online, maintain the website and keep the project up to date.
 
-## What's on the map
+**🗺️ [Explore the Political Map](https://valorz1.github.io/nations-map./)**
 
-- **24 territories** with borders traced directly from the original pencil lines
-- **Ratings** for each nation: Rate, Military power (M) and Economic power (E)
-- **Capitals**: white circles show capital cities. The number inside is the infrastructure level, and bigger circles mean bigger populations
-- **Disputed areas** (hatched, marked DIS) and **resistance movements** (dotted), including the Teddy Resistance and the Lego Resistance
-- **The Blight**, an infected zone overrun by zombies
-- **Territories** shown in their owner's colour, such as Shero U. (Sherolean Empire) and Marmites (Marbonese)
+Works in modern desktop and mobile browsers. No installation required.
 
-## Features
+---
 
-| Section | What it does |
+## 🌐 About the World
+
+The map represents an entirely fictional world containing 24 territories, each with its own identity, political system, history and place in the balance of power.
+
+The original borders were traced directly from my brother's hand-drawn pencil map, preserving the geography and layout of his original creation.
+
+### Map symbols and information
+
+- **Nation ratings:** Each nation has a Rate, Military Power (M) and Economic Power (E) rating.
+- **Capital cities:** White circles identify capitals. Numbers indicate infrastructure levels, while circle sizes represent population.
+- **Disputed territories:** Hatched areas marked `DIS` identify disputed land.
+- **Resistance movements:** Dotted areas represent resistance movements, including the Teddy Resistance and Lego Resistance.
+- **The Blight:** An infected territory overrun by zombies.
+- **Controlled territories:** Territories are displayed in their owner's colour, including Shero U. (Sherolean Empire) and Marmites (Marbonese).
+
+---
+
+## ✨ Features
+
+The website includes several sections for exploring and understanding the fictional world.
+
+| Section | Description |
 |---|---|
-| Overview | The world at a glance: great powers, balance of power, current wars and alliances, map key |
-| Nations | Searchable index of every nation, territory and movement, filterable and sortable |
-| Nation dossier | Emblem, rank, power cards, capitals and infrastructure, government, people, relations, lore and power over time |
-| Rankings | Overall power rankings, Rate / Military / Economy leaderboards, infrastructure table and side-by-side comparison of two nations |
-| Characters | Gallery and profiles of rulers and heroes: portrait, biography, achievements, political position, historical importance |
-| Diplomacy | Relations matrix, current and historical wars, alliances, outcomes and changes over time |
-| History | Archive of saved moments with map snapshots, territorial changes, power changes and rulers of the day |
-| Encyclopedia | Browse or search nations, characters, governments, wars, alliances, capitals and events |
-| Map tools | Zoom, layers, map key, timeline (slide between moments) and border editing |
-| Search | Press `/` or Ctrl+K anywhere to search everything |
+| **Overview** | A global overview of major powers, balance of power, current wars, alliances and map information. |
+| **Nations** | A searchable and sortable index of nations, territories and movements. |
+| **Nation Dossiers** | Detailed nation profiles featuring emblems, rankings, statistics, capitals, infrastructure, governments, populations, relations and lore. |
+| **Rankings** | Overall power rankings, military and economic leaderboards, infrastructure statistics and nation comparisons. |
+| **Characters** | Profiles of rulers and important figures, including portraits, biographies, achievements and historical significance. |
+| **Diplomacy** | Relations between nations, alliances, wars, historical conflicts and their outcomes. |
+| **History** | Saved historical moments, map snapshots, territorial changes, changes in power and historical rulers. |
+| **Encyclopedia** | A searchable reference for nations, characters, governments, wars, alliances, capitals and historical events. |
+| **Map Tools** | Zoom controls, map layers, map key, timeline and border editing. |
+| **Global Search** | Search across the world using `/` or `Ctrl + K`. |
 
-## Nations and governments
+---
 
-| Nation | Ruled by | Government | Rate | Military | Economy |
-|---|---|---|---|---|---|
+## 🏛️ Nations and Governments
+
+Below is a selection of nations and their current recorded statistics.
+
+| Nation | Leader / Ruler | Government | Rate | Military | Economy |
+|---|---|---|---:|---:|---:|
 | Elarion Federation | Leon | Monarchy | 160 | 98 | 80 |
 | Sherolean Empire | Shero | Dictatorship | 156 | 95 | 82 |
 | Representation of Baloonia | Parliament | Democracy | 150 | 60 | 95 |
@@ -50,21 +70,57 @@ Works in any modern browser on a computer, phone or iPad. No install needed.
 | Civil Union of the Jungle | Tribal leader | Authoritarianism | 78 | 30 | 50 |
 | Marmite Resistance | Military generals | Anarchy | 55 | 12 | 6 |
 
-## Using it
+*Statistics represent the fictional world's own ranking system and are not real-world measurements.*
 
-- **Tap a nation** on the map to open its dossier
-- **Drag** to move around, and **pinch or scroll** to zoom
-- On a phone or iPad, drag the bottom sheet up or down to resize it
-- Keyboard: `/` search, `1`–`7` sections, `T` timeline, `L` layers, `?` all shortcuts
+---
 
-## Saving changes
+## 🎮 How to Use the Map
 
-Edits (ratings, borders, lore, governments, wars, timeline, characters) are **saved automatically in your browser**.
-To publish them for everyone:
+### Mouse and touchscreen controls
 
-1. Open **Your data** (the database icon, top right) and choose **Export world.json**
-2. Replace `data/world.json` in this repo with the downloaded file
-3. Commit and push:
+- **Select a nation:** Click or tap a nation to open its dossier.
+- **Move around:** Drag the map.
+- **Zoom:** Scroll with your mouse or pinch on a touchscreen.
+- **Resize the information panel:** On phones and iPads, drag the bottom sheet up or down.
+
+### Keyboard shortcuts
+
+| Shortcut | Action |
+|---|---|
+| `/` | Open search |
+| `Ctrl + K` | Open global search |
+| `1–7` | Switch between sections |
+| `T` | Open the timeline |
+| `L` | Open map layers |
+| `?` | Show all keyboard shortcuts |
+
+---
+
+## 💾 Editing and Saving the World
+
+The map supports editing, allowing changes to be made to the fictional world.
+
+Edits are automatically saved in your browser, including:
+
+- Nation ratings and statistics
+- Borders and territories
+- Lore and government information
+- Wars and alliances
+- Timeline events
+- Characters and their biographies
+
+### Publishing your changes
+
+Browser changes are stored locally and do not automatically update the live website.
+
+To publish your changes for everyone:
+
+1. Open **Your Data** using the database icon in the top-right corner.
+2. Select **Export world.json**.
+3. Replace `data/world.json` in the repository with the exported file.
+4. Commit and push the changes to GitHub.
+
+For example:
 
 ```bash
 git add data/world.json
@@ -72,25 +128,86 @@ git commit -m "Update the world"
 git push
 ```
 
-**Import** loads a world.json into your browser, and **Discard my changes** returns to the published version.
+### Importing and resetting data
 
-## Running it locally
+- **Import:** Load a `world.json` file into your browser.
+- **Discard my changes:** Return to the published version of the world.
 
-The page loads its data files, so open it through a small local server rather than double-clicking `index.html`:
+Always keep a backup of your exported data before replacing files.
+
+---
+
+## 💻 Running Locally
+
+You can run the project on your own computer without installing any additional dependencies beyond Python (if using the suggested local server).
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Valorz1/nations-map..git
+```
+
+### 2. Open the project folder
+
+```bash
+cd nations-map.
+```
+
+### 3. Start a local server
 
 ```bash
 python -m http.server
 ```
 
-Then visit http://localhost:8000.
+### 4. Open the website
 
-## Credits
+Visit:
 
-- **Creator:** my brother. The world, the hand-drawn map, the nations, the lore and the characters are all his.
-- **Helper:** me (Valorz1). I look after the GitHub repo and the website.
+```text
+http://localhost:8000
+```
 
-## Files
+A local server is recommended because the website loads external data files, which may not work correctly when opening `index.html` directly.
 
-- `index.html`: the whole map in one file (no other files or setup needed)
-- `README.md`: this file
-- `LICENSE`: MIT licence
+---
+
+## 📁 Project Structure
+
+```text
+nations-map.
+│
+├── index.html
+├── README.md
+├── LICENSE
+│
+└── data/
+    └── world.json
+```
+
+- `index.html` — Main website and interactive map.
+- `data/world.json` — World data, including nations and their information.
+- `README.md` — Project documentation.
+- `LICENSE` — MIT licence.
+
+---
+
+## ❤️ Credits and Acknowledgements
+
+This project is built around an original fictional world created by my brother.
+
+- **World Creator:** My brother — creator of the world, original hand-drawn map, nations, borders, rulers, wars, characters and lore.
+- **Website and Maintenance:** Valorz1 — responsible for the GitHub repository, website implementation and ongoing maintenance.
+
+The fictional world and its original creative content belong to its creator.
+
+---
+
+## 📜 Licence
+
+The source code is available under the MIT Licence. See the [LICENSE](LICENSE) file for details.
+
+The MIT licence for the code does not automatically grant permission to reuse the original fictional world, map artwork, characters or lore.
+
+---
+
+**Explore the world. Discover its nations. Follow its history.**
