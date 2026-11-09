@@ -4,7 +4,7 @@ An interactive political map of an invented world, traced from a hand-drawn penc
 
 > **This is my brother's project.** He invented this world and drew the original map, including the nations, rulers, wars, lore and characters. I'm just helping by putting it online and keeping the code up to date.
 
-**View the map:** https://valorz1.github.io/nations-map/
+**View the map:** https://valorz1.github.io/nations-map./
 
 Works in any modern browser on a computer, phone or iPad. No install needed.
 
@@ -91,13 +91,6 @@ Then visit http://localhost:8000.
 
 ## Files
 
-- `index.html`: page structure
-- `css/`: `tokens.css` (design system), `map.css` (the map's own styles, unchanged), `layout.css`, `components.css`, `views.css`
-- `js/main.js`: starts the app; `js/store.js` loading and saving; `js/model.js` derived facts and rankings; `js/search.js` search index
-- `js/map/`: the map engine (`engine.js`), border editor (`editor.js`) and timeline (`timeline.js`)
-- `js/ui/` and `js/views/`: the interface and each section
-- `data/geo.json`: map geometry traced from the sketch
-- `data/nations.json`: every nation, territory and movement as drawn on the sketch
-- `data/world.json`: the editable world (ratings, borders, lore, governments, wars and alliances, timeline, characters)
-- `assets/emblem.svg`: site emblem
-- `README.md`, `LICENSE`
+- `index.html`: the whole map in one file (no other files or setup needed)
+- `README.md`: this file
+- `LICENSE`: MIT licence
