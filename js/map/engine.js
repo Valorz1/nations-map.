@@ -43,7 +43,7 @@ export function buildMap() {
 <clipPath id="frameClip"><rect x="${X0}" y="${Y0}" width="${X1 - X0}" height="${Y1 - Y0}"/></clipPath>`;
 
   el("rect", { x: X0 - PAD, y: Y0 - PAD, width: X1 - X0 + PAD * 2, height: Y1 - Y0 + PAD * 2, fill: "#f1efe8", rx: 4 }, svg);
-  el("rect", { x: X0 - PAD, y: Y0 - PAD, width: X1 - X0 + PAD * 2, height: Y1 - Y0 + PAD * 2, filter: "url(#paper)", rx: 4 }, svg);
+  paperTexture(el("rect", { x: X0 - PAD, y: Y0 - PAD, width: X1 - X0 + PAD * 2, height: Y1 - Y0 + PAD * 2, fill: "none", rx: 4 }, svg));
 
   gRegions = el("g", {}, svg);
   regionPath = {};
@@ -54,7 +54,9 @@ export function buildMap() {
     const g = el("g", { class: "region", "data-id": r.id, tabindex: 0, role: "button", "aria-label": r.name }, gRegions);
     regionPath[r.id] = el("path", { d: r.d, fill: r.fill, stroke: r.fill, "stroke-width": 1.2 }, g); r.els.push(regionPath[r.id]);
     if (r.pattern) r.els.push(el("path", { d: r.d, fill: `url(#${r.pattern})` }, g));
-    r.els.push(el("path", { d: r.d, fill: "none", stroke: shade(r.fill, .8), "stroke-width": 16, opacity: .22, "clip-path": `url(#${id})` }, g), el("path", { d: r.d, fill: "none", stroke: shade(r.fill, .8), "stroke-width": 8, opacity: .28, "clip-path": `url(#${id})` }, g));
+    const s1 = el("path", { d: r.d, fill: "none", stroke: shade(r.fill, .8), "stroke-width": 16, opacity: .22, "clip-path": `url(#${id})` }, g), s2 = el("path", { d: r.d, fill: "none", stroke: shade(r.fill, .8), "stroke-width": 8, opacity: .28, "clip-path": `url(#${id})` }, g);
+    r.els.push(s1, s2);
+    r.col = [[regionPath[r.id], "fill", r.fill], [regionPath[r.id], "stroke", r.fill], [s1, "stroke", shade(r.fill, .8)], [s2, "stroke", shade(r.fill, .8)]];
   }
 
   gRegions.appendChild(gRegions.querySelector('[data-id="marmite"]')); // islands sit above neighbours
@@ -127,6 +129,38 @@ export function buildMap() {
   initTooltip();
 }
 
+/* The paper grain used to be a live feTurbulence filter over the whole map,
+   recomputed on every pan/zoom frame (very slow on iPads). Render it once into
+   a small tile and repeat it as a pattern instead; same noise, same look. */
+function paperTexture(rect) {
+  const S = 256, fallback = () => rect.setAttribute("filter", "url(#paper)");
+  const src = `<svg xmlns="${NS}" width="${S}" height="${S}"><filter id="p" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .35  0 0 0 0 .32  0 0 0 0 .28  0 0 0 .09 0"/></filter><rect width="${S}" height="${S}" filter="url(#p)"/></svg>`;
+  const img = new Image();
+  img.onload = () => {
+    try {
+      const c = document.createElement("canvas"); c.width = c.height = S; c.getContext("2d").drawImage(img, 0, 0);
+      const pat = el("pattern", { id: "paperTex", width: S, height: S, patternUnits: "userSpaceOnUse" }, defs);
+      el("image", { href: c.toDataURL("image/png"), width: S, height: S }, pat);
+      rect.setAttribute("fill", "url(#paperTex)");
+    } catch { fallback(); }
+  };
+  img.onerror = fallback;
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(src);
+}
+
+/* colour equivalent of CSS `saturate(.35) brightness(1.06)`, used to dim the
+   unselected regions without per-element filters (slow on iPad Safari) */
+const dimCache = {};
+function dimColor(c) {
+  if (dimCache[c]) return dimCache[c];
+  const v = c[0] === "#" ? (n => [n >> 16, n >> 8 & 255, n & 255])(parseInt(c.slice(1), 16)) : c.match(/\d+/g).map(Number);
+  const s = .35, [r, g, b] = v;
+  const o = [(.213 + .787 * s) * r + (.715 - .715 * s) * g + (.072 - .072 * s) * b,
+    (.213 - .213 * s) * r + (.715 + .285 * s) * g + (.072 - .072 * s) * b,
+    (.213 - .213 * s) * r + (.715 - .715 * s) * g + (.072 + .928 * s) * b].map(x => Math.max(0, Math.min(255, Math.round(x * 1.06))));
+  return dimCache[c] = "rgb(" + o.join(",") + ")";
+}
+
 const arcD = i => "M" + GEO.arcs[i].map(fmt).join("L");
 
 function addText(cls, x, y, lines, size) {
@@ -159,16 +193,41 @@ export function drawTags() { gT.innerHTML = ""; for (const r of R) if (r.stats) 
 const FULL = { x: X0 - PAD, y: Y0 - PAD, w: X1 - X0 + PAD * 2, h: Y1 - Y0 + PAD * 2 };
 export const FULLBOX = { x: X0 - PAD, y: Y0 - PAD, width: X1 - X0 + PAD * 2, height: Y1 - Y0 + PAD * 2 };
 export const vb = { ...FULL };
-export const setVB = () => svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
-export function toSvg(cx, cy) { const p = svg.createSVGPoint(); p.x = cx; p.y = cy; return p.matrixTransform(svg.getScreenCTM().inverse()); }
-export function zoomAt(f, cx, cy) {
+/* `vb` is the live view; `drawn` is what the SVG was last rendered at. While a
+   finger is moving we only CSS-transform the already-rendered map (cheap, done
+   by the GPU) and re-render the SVG once the gesture ends or pauses. */
+const drawn = { ...FULL };
+let liveRaf = 0, idleT = 0;
+export function setVB() {
+  cancelAnimationFrame(liveRaf); liveRaf = 0; clearTimeout(idleT);
+  Object.assign(drawn, vb); svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`); svg.style.transform = "";
+}
+function applyLive() {
+  liveRaf = 0;
+  const W = svg.clientWidth, H = svg.clientHeight, s0 = Math.min(W / drawn.w, H / drawn.h), k = drawn.w / vb.w;
+  const tx = (W - drawn.w * s0) / 2 * (1 - k) + k * s0 * (drawn.x - vb.x), ty = (H - drawn.h * s0) / 2 * (1 - k) + k * s0 * (drawn.y - vb.y);
+  svg.style.transform = `translate(${tx}px,${ty}px) scale(${k})`;
+}
+function liveVB() {
+  if (!liveRaf) liveRaf = requestAnimationFrame(applyLive);
+  clearTimeout(idleT); idleT = setTimeout(setVB, 200); // sharpen when the finger rests
+}
+const commitVB = () => { if (liveRaf || svg.style.transform) setVB(); };
+/* screen -> map coordinates from the live view (valid mid-gesture, while the SVG is transformed) */
+export function toSvg(cx, cy) {
+  const r = svg.parentNode.getBoundingClientRect(), W = svg.clientWidth, H = svg.clientHeight, s = Math.min(W / vb.w, H / vb.h);
+  return { x: vb.x + (cx - r.left - (W - vb.w * s) / 2) / s, y: vb.y + (cy - r.top - (H - vb.h * s) / 2) / s };
+}
+export function zoomAt(f, cx, cy, live = false) {
   const nw = Math.min(Math.max(vb.w * f, 220), FULL.w * 1.4); f = nw / vb.w;
-  const p = toSvg(cx, cy); Object.assign(vb, { x: p.x - (p.x - vb.x) * f, y: p.y - (p.y - vb.y) * f, w: vb.w * f, h: vb.h * f }); setVB();
+  const p = toSvg(cx, cy); Object.assign(vb, { x: p.x - (p.x - vb.x) * f, y: p.y - (p.y - vb.y) * f, w: vb.w * f, h: vb.h * f }); live ? liveVB() : setVB();
 }
 let anim;
 export function flyTo(t) {
-  cancelAnimationFrame(anim); const s = { ...vb }, t0 = performance.now(), D = matchMedia("(prefers-reduced-motion:reduce)").matches ? 0 : 420;
-  const step = n => { const k = D ? Math.min(1, (n - t0) / D) : 1, e = 1 - Math.pow(1 - k, 3); for (const q of ["x", "y", "w", "h"]) vb[q] = s[q] + (t[q] - s[q]) * e; setVB(); if (k < 1) anim = requestAnimationFrame(step); }; anim = requestAnimationFrame(step);
+  cancelAnimationFrame(anim); commitVB(); const s = { ...vb }, t0 = performance.now(), D = matchMedia("(prefers-reduced-motion:reduce)").matches ? 0 : 420;
+  // zooming into something already on screen: animate the rendered picture, redraw once at the end
+  const zoomIn = t.x >= s.x - 1 && t.y >= s.y - 1 && t.x + t.w <= s.x + s.w + 1 && t.y + t.h <= s.y + s.h + 1 && Math.abs(t.w / t.h - s.w / s.h) < .01;
+  const step = n => { const k = D ? Math.min(1, (n - t0) / D) : 1, e = 1 - Math.pow(1 - k, 3); for (const q of ["x", "y", "w", "h"]) vb[q] = s[q] + (t[q] - s[q]) * e; if (k < 1) { zoomIn ? applyLive() : setVB(); anim = requestAnimationFrame(step); } else setVB(); }; anim = requestAnimationFrame(step);
 }
 export function fitView(b, pad) {
   const r = svg.getBoundingClientRect(), W = r.width, H = r.height, Hv = Math.max(120, H - sheetPx() - (mq.matches ? 8 : 0));
@@ -185,7 +244,7 @@ export const flyToPoint = (x, y, size = 260) => flyTo(fitView({ x: x - size / 2,
 export const refitIfIdle = () => { if (!highlighted) resetView(); };
 
 function initView() {
-  svg.setAttribute("preserveAspectRatio", "xMidYMid meet"); setVB();
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet"); svg.style.transformOrigin = "0 0"; setVB();
   const ctr = () => { const r = svg.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
   document.getElementById("zIn").onclick = () => zoomAt(.7, ...ctr());
   document.getElementById("zOut").onclick = () => zoomAt(1 / .7, ...ctr());
@@ -197,7 +256,7 @@ export const ptrs = new Map();
 function initPointer() {
   let moved = 0, downRegion = null, pinch = null;
   svg.addEventListener("pointerdown", e => {
-    svg.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); moved = 0;
+    svg.setPointerCapture(e.pointerId); if (!ptrs.size) cancelAnimationFrame(anim); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); moved = 0;
     if (ed.editMode) { if (ptrs.size === 1 && ed.brushStart(e)) return; if (ptrs.size > 1) ed.brushEnd(true); }
     const g = e.target.closest(".region,.feat"); downRegion = ptrs.size === 1 && g ? g.dataset.id : null; svg.classList.add("dragging");
     if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); }
@@ -206,30 +265,30 @@ function initPointer() {
     if (ed.editMode) ed.brushCursor(e); if (!ptrs.has(e.pointerId)) return;
     if (ed.brush) { ed.brushMove(e); return; } const prev = ptrs.get(e.pointerId), cur = { x: e.clientX, y: e.clientY };
     if (ptrs.size === 1) {
-      const sc = Math.max(vb.w / svg.clientWidth, vb.h / svg.clientHeight); vb.x -= (cur.x - prev.x) * sc; vb.y -= (cur.y - prev.y) * sc; setVB();
+      const sc = Math.max(vb.w / svg.clientWidth, vb.h / svg.clientHeight); vb.x -= (cur.x - prev.x) * sc; vb.y -= (cur.y - prev.y) * sc; liveVB();
     }
     moved += Math.hypot(cur.x - prev.x, cur.y - prev.y); ptrs.set(e.pointerId, cur);
-    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; const dd = Math.hypot(a.x - b.x, a.y - b.y); if (pinch) { zoomAt(pinch / dd, (a.x + b.x) / 2, (a.y + b.y) / 2); } pinch = dd; }
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; const dd = Math.hypot(a.x - b.x, a.y - b.y); if (pinch) { zoomAt(pinch / dd, (a.x + b.x) / 2, (a.y + b.y) / 2, true); } pinch = dd; }
   });
   function up(e) {
     if (!ptrs.has(e.pointerId)) return; if (ed.brush) { ptrs.delete(e.pointerId); ed.brushEnd(false); svg.classList.remove("dragging"); return; } ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null;
-    if (!ptrs.size) { svg.classList.remove("dragging"); if (moved < 7 && downRegion) hooks.select(downRegion, { fly: false }); downRegion = null; }
+    if (!ptrs.size) { svg.classList.remove("dragging"); commitVB(); if (moved < 7 && downRegion) hooks.select(downRegion, { fly: false }); downRegion = null; }
   }
   svg.addEventListener("pointerup", up); svg.addEventListener("pointercancel", up);
-  svg.addEventListener("wheel", e => { e.preventDefault(); cancelAnimationFrame(anim); zoomAt(Math.exp(e.deltaY * .0015), e.clientX, e.clientY); }, { passive: false });
+  svg.addEventListener("wheel", e => { e.preventDefault(); cancelAnimationFrame(anim); zoomAt(Math.exp(e.deltaY * .0015), e.clientX, e.clientY, true); }, { passive: false });
   svg.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.dataset.id) { e.preventDefault(); hooks.select(e.target.dataset.id, { fly: true }); } });
 }
 
 /* ============ SELECTION HIGHLIGHT (as in the original select()) ============ */
 export function highlight(id, { withHost = true } = {}) {
   highlighted = id || null;
-  if (!id) {
-    selPath.setAttribute("d", ""); svg.classList.remove("focus");
-    gRegions.querySelectorAll(".region.on").forEach(g => g.classList.remove("on")); return;
-  }
-  const r = byId[id]; selPath.setAttribute("d", r.d);
-  svg.classList.add("focus");
-  gRegions.querySelectorAll(".region").forEach(g => g.classList.toggle("on", g.dataset.id === id || (withHost && g.dataset.id === r.in)));
+  const r = id && byId[id];
+  selPath.setAttribute("d", r ? r.d : ""); svg.classList.toggle("focus", !!r);
+  gRegions.querySelectorAll(".region").forEach(g => {
+    const on = !!r && (g.dataset.id === id || (withHost && g.dataset.id === r.in)), reg = byId[g.dataset.id], dim = !!r && !on;
+    g.classList.toggle("on", on);
+    if (reg && reg.col && reg.dim !== dim) { reg.dim = dim; for (const [e, a, c] of reg.col) e.setAttribute(a, dim ? dimColor(c) : c); }
+  });
 }
 export const highlightedId = () => highlighted;
 

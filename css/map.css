@@ -9,15 +9,19 @@ svg#map{
   --display:"Spectral SC", Georgia, serif;--serif:"Spectral", Georgia, serif;
   --ui:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;
 }
-svg#map{width:100%;height:100%;display:block;cursor:grab;user-select:none;-webkit-user-select:none;font-size:16px;line-height:normal}
+svg#map{width:100%;height:100%;display:block;will-change:transform;cursor:grab;user-select:none;-webkit-user-select:none;font-size:16px;line-height:normal}
 svg#map.dragging{cursor:grabbing}
 .region,.feat{outline:none}
 .feat{cursor:pointer}
-.feat:hover path{stroke:#b07a12;stroke-width:2}
-.region{cursor:pointer;transition:filter .2s}
-.region:hover{filter:brightness(1.05) saturate(1.15)}
-svg.focus .region:not(.on){filter:saturate(.35) brightness(1.06)}
-svg.focus .region:not(.on):hover{filter:saturate(.7) brightness(1.06)}
+.region{cursor:pointer}
+/* hover effects only for real mouse pointers: on iPads a tap leaves :hover
+   stuck on the tapped region, and SVG filters are slow to paint there.
+   Dimming of unselected regions is done by recolouring in engine.js. */
+@media (hover:hover) and (pointer:fine){
+  .feat:hover path{stroke:#b07a12;stroke-width:2}
+  .region{transition:filter .2s}
+  .region:hover{filter:brightness(1.05) saturate(1.15)}
+}
 .border{fill:none;stroke:var(--line);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round;pointer-events:none}
 .border-under{fill:none;stroke:#fff;stroke-width:4.5;opacity:.55;stroke-linejoin:round;pointer-events:none}
 .sel{fill:none;stroke:var(--accent);stroke-width:5;stroke-linejoin:round;pointer-events:none}
