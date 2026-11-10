@@ -7,6 +7,7 @@ import { GEO, R, byId, rankOf } from "../model.js";
 import { BORDERS, GOV } from "../store.js";
 import { sheetPx, mq } from "../ui/panel.js";
 import { esc, emblem } from "../ui/dom.js";
+import { estimate, short } from "../estimates.js";
 import * as ed from "./editor.js";
 
 export const X0 = 30, X1 = 1970, Y0 = 30, Y1 = 1384, PAD = 58;
@@ -21,7 +22,13 @@ export let svg, ORIG_ARCS, selPath, gRegions, regionPath, borderEls, gRel, tip, 
 let defs, gL, gT;
 export let curRel = [];
 let highlighted = null;
-const hooks = { select: () => {} };
+const hooks = { select: () => {}, view: () => {} };
+let gCap;
+/* names the players have given to capital cities, written under their circles */
+export function drawCapNames() {
+  if (!gCap) return; gCap.innerHTML = "";
+  for (const r of R) r.marks.forEach((m, i) => { const n = GOV[r.id]?.capNames?.[i]; if (!n || m[5]) return; el("text", { x: m[1], y: m[2] + (m[3] ? 11 : 17) + 13, class: "capname" }, gCap).textContent = n; });
+}
 export const setHooks = h => Object.assign(hooks, h);
 
 export function buildMap() {
@@ -124,6 +131,8 @@ export function buildMap() {
   addText("note", 1950, 320, ["M.R"], 12);
   for (const r of R) { (r.labels2 || []).forEach(L => addText("lbl", L.x, L.y, L.l, L.s)); addText("lbl", r.label.x, r.label.y, r.label.l, r.label.s); r.marks.forEach(m => mark(m[0], m[1], m[2], m[3], m[4], m[5])); }
 
+  gCap = el("g", { class: "capnames" }, gL); drawCapNames();
+
   initView();
   initPointer();
   initTooltip();
@@ -201,6 +210,7 @@ let liveRaf = 0, idleT = 0;
 export function setVB() {
   cancelAnimationFrame(liveRaf); liveRaf = 0; clearTimeout(idleT);
   Object.assign(drawn, vb); svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`); svg.style.transform = "";
+  hooks.view();
 }
 function applyLive() {
   liveRaf = 0;
@@ -231,10 +241,11 @@ export function flyTo(t) {
 }
 export function fitView(b, pad) {
   const r = svg.getBoundingClientRect(), W = r.width, H = r.height, Hv = Math.max(120, H - sheetPx() - (mq.matches ? 8 : 0));
-  const bw = Math.max(b.width * pad, pad > 1 ? 380 : 0), bh = Math.max(b.height * pad, pad > 1 ? 300 : 0), sc = Math.max(bw / W, bh / Hv);
-  const cx = b.x + b.width / 2, cy = b.y + b.height / 2, F = FULLBOX, vw = W * sc, vh = Hv * sc; let x = cx - vw / 2, y = cy - vh / 2;
+  const bw = Math.max(b.width * pad, pad > 1 ? 380 : 0), bh = Math.max(b.height * pad, pad > 1 ? 300 : 0), rail = mq.matches ? 0 : (document.querySelector(".rail")?.offsetWidth || 0) + 22, Wv = Math.max(160, W - rail), sc = Math.max(bw / Wv, bh / Hv);
+  // fit into the part of the map area that the tool buttons don't cover
+  const cx = b.x + b.width / 2, cy = b.y + b.height / 2, F = FULLBOX, vw = Wv * sc, vh = Hv * sc; let x = cx - vw / 2, y = cy - vh / 2;
   if (vw <= F.width) x = Math.min(Math.max(x, F.x), F.x + F.width - vw); if (vh <= F.height) y = Math.min(Math.max(y, F.y), F.y + F.height - vh);
-  return { x, y, w: vw, h: H * sc };
+  return { x, y, w: W * sc, h: H * sc };
 }
 export const fitAll = () => flyTo(fitView(FULLBOX, 1));
 export const resetView = () => { Object.assign(vb, fitView(FULLBOX, 1)); setVB(); };
@@ -311,7 +322,8 @@ function tipHTML(r) {
   const s = r.stats || {}, gv = GOV[r.id], rk = rankOf(r, "rate");
   const sub = [r.of ? `Territory of ${byId[r.of].name}` : r.kind ? `Resistance in ${byId[r.in].name}` : r.tag || null,
     gv && gv.gov ? gv.gov : null, gv && gv.leader ? "ruled by " + gv.leader : null, rk ? `#${rk.rank} of ${rk.of}` : null].filter(Boolean);
-  const st = [["Rate", s.rate], ["Mil.", s.m], ["Econ.", s.e]].filter(([, v]) => v != null);
+  const est = estimate(r);
+  const st = [["Rate", s.rate], ["Mil.", s.m], ["Econ.", s.e], ["People", est ? short(est.pop) : null]].filter(([, v]) => v != null);
   return `<div class="tp-h">${emblem(r, 24)}<b>${esc(r.name)}</b></div>${sub.length ? `<span class="tp-sub">${sub.map(esc).join(" · ")}</span>` : ""}
     ${st.length ? `<div class="tp-stats">${st.map(([k, v]) => `<span>${k}<b>${v}</b></span>`).join("")}</div>` : ""}<span class="tp-hint">Click to open the dossier</span>`;
 }

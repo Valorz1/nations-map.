@@ -4,8 +4,11 @@
    ========================================================================== */
 import { load, status, onStatus, exportWorld, importWorld, revertToPublished, getPref, setPref } from "./store.js";
 import { prepare } from "./model.js";
-import { buildMap, setHooks, resetView, refitIfIdle, LAYERS, setLayer, svg } from "./map/engine.js";
+import { buildMap, setHooks, resetView, refitIfIdle, LAYERS, setLayer, svg, vb } from "./map/engine.js";
+import { KM_PER_UNIT } from "./estimates.js";
+import { warView } from "./views/war.js";
 import { initEditor, toggleEdit, onEditChange } from "./map/editor.js";
+import { VIEWS as MAP_VIEWS, initViews, setView, viewMode, refreshView } from "./map/views.js";
 import { initTimeline, setTimeline, setTimelineHooks, tlOpen } from "./map/timeline.js";
 import { initPanel, onPanelResize, mq, setSheet } from "./ui/panel.js";
 import { register, initRouter, go, refresh, onRoute, route } from "./ui/router.js";
@@ -22,14 +25,14 @@ import { charactersView, characterView } from "./views/characters.js";
 import { diplomacyView } from "./views/diplomacy.js";
 import { historyView } from "./views/history.js";
 import { encyclopediaView } from "./views/encyclopedia.js";
-import { legendHTML } from "./views/legend.js";
+import { legendHTML, terrainLegendHTML } from "./views/legend.js";
 
 const VIEWS = {
   overview: { render: overview, click: overviewClick },
   nations: nationsView, nation: dossierView,
   rankings: rankingsView, compare: compareView,
   characters: charactersView, character: characterView,
-  diplomacy: diplomacyView, history: historyView, encyclopedia: encyclopediaView,
+  diplomacy: diplomacyView, history: historyView, encyclopedia: encyclopediaView, war: warView,
 };
 let active = VIEWS.overview;
 
@@ -42,12 +45,14 @@ async function boot() {
   buildMap();
   initEditor();
   initTimeline();
-  setHooks({ select: (id, o) => go(`nation/${id}`, o) });
+  initViews();
+  setHooks({ select: (id, o) => go(`nation/${id}`, o), view: drawScale });
   setTimelineHooks({ refresh: () => refresh(), archive: () => go("history") });
   onPanelResize(refitIfIdle);
 
   for (const [name, v] of Object.entries(VIEWS)) register(name, (args, opts) => { active = v; v.render(args, opts); });
   initShell();
+  initWelcome();
   initRouter();
   requestAnimationFrame(() => { resetView(); document.body.classList.remove("booting"); });
   let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(refitIfIdle, 150); });
@@ -72,7 +77,7 @@ function initShell() {
   // navigation (desktop bar + mobile drawer)
   document.getElementById("mainNav").innerHTML = SECTIONS.map(s => `<a class="nav-item" href="#/${s.k}" data-sec="${s.k}">${icon(s.ico)}<span>${s.label}</span></a>`).join("");
   document.getElementById("drawerNav").innerHTML = SECTIONS.map(s => `<a class="dnav" href="#/${s.k}" data-sec="${s.k}"><span class="dn-ic">${icon(s.ico)}</span><span><b>${s.label}</b><small>${s.desc}</small></span></a>`).join("");
-  document.getElementById("drawerTools").innerHTML = [["time", "history", "Timeline"], ["edit", "pen", "Edit borders"], ["layers", "layers", "Layers"], ["key", "legend", "Map key"], ["search", "search", "Search"], ["data", "database", "Your data"]]
+  document.getElementById("drawerTools").innerHTML = [["views", "globe", "Map views"], ["time", "history", "Timeline"], ["edit", "pen", "Edit borders"], ["layers", "layers", "Layers"], ["key", "legend", "Map key"], ["search", "search", "Search"], ["data", "database", "Your data"]]
     .map(([k, ic, l]) => `<button type="button" data-tool="${k}" ${k === "time" || k === "edit" ? 'aria-pressed="false"' : ""}>${icon(ic)}${l}</button>`).join("");
   onRoute(r => {
     const sec = sectionOf(r.name);
@@ -91,6 +96,7 @@ function initShell() {
     const t = e.target.closest("[data-tool]"); if (!t) return;
     const k = t.dataset.tool;
     closeDrawer(false);
+    if (k === "views") togglePop("views", true);
     if (k === "time") setTimeline(!tlOpen);
     if (k === "edit") toggleEdit();
     if (k === "layers") togglePop("layers", true);
@@ -100,11 +106,16 @@ function initShell() {
   });
 
   // map rail
+  document.getElementById("bView").onclick = e => { e.stopPropagation(); togglePop("views"); };
+  const drawViews = () => { document.getElementById("views").innerHTML = `<p class="pop-title">Map view</p>${MAP_VIEWS.map(v => `<button type="button" class="view-opt" role="radio" aria-checked="${viewMode() === v.k}" data-view="${v.k}"><span class="vo-ic">${icon(v.ico)}</span><span><b>${v.label}</b><small>${v.desc}</small></span>${icon("check", "i-sm vo-ok")}</button>`).join("")}<p class="pop-note">The political map never changes. The other views are extra layers on top of it.</p>`; };
+  drawViews();
+  document.getElementById("views").addEventListener("click", e => { const b = e.target.closest("[data-view]"); if (!b) return; pickView(b.dataset.view); drawViews(); closePops(); });
+  onRoute(() => refreshView());
   document.getElementById("bTime").onclick = () => setTimeline(!tlOpen);
   document.getElementById("bEdit").onclick = () => toggleEdit();
   document.getElementById("bLayers").onclick = e => { e.stopPropagation(); togglePop("layers"); };
   document.getElementById("bKey").onclick = e => { e.stopPropagation(); togglePop("mapKey"); };
-  document.getElementById("mapKey").innerHTML = `<p class="pop-title">Map key</p>${legendHTML()}`;
+  document.getElementById("mapKey").innerHTML = `<p class="pop-title">Map key</p>${legendHTML()}<p class="pop-title">Terrain view</p>${terrainLegendHTML()}`;
   onEditChange(() => { if (route.name === "history") refresh(); });
 
   // layers (remembered in this browser)
@@ -147,17 +158,20 @@ function initShell() {
   setActions([
     { title: "Open the timeline", sub: "Slide between saved moments", ico: "history", run: () => setTimeline(true) },
     { title: "Edit borders", sub: "Drag any border to reshape nations", ico: "pen", run: () => toggleEdit() },
+    ...MAP_VIEWS.map(v => ({ title: `Map view: ${v.label}`, sub: v.desc, ico: v.ico, run: () => { pickView(v.k); drawViews(); } })),
     { title: "Show the whole map", sub: "Zoom out to fit", ico: "maximize", run: () => document.getElementById("zFit").click() },
     { title: "Map layers", sub: "Ratings, capitals, notes, wars, grid", ico: "layers", run: () => togglePop("layers", true) },
     { title: "Map key", sub: "What the symbols mean", ico: "legend", run: () => togglePop("mapKey", true) },
     { title: "Compare two nations", sub: "Side by side", ico: "scale", run: () => go("rankings/compare") },
+    { title: "War simulator", sub: "Who would win? A what-if that changes nothing", ico: "swords", run: () => go("war") },
+    { title: "Population & GDP table", sub: "Estimated from the map", ico: "users", run: () => go("rankings/people") },
     { title: "Add a character", sub: "With a portrait and biography", ico: "users", run: () => go("character/new") },
     { title: "Export world.json", sub: "Download your world to publish it", ico: "download", run: () => exportWorld() },
     { title: "Keyboard shortcuts", sub: "Move around faster", ico: "keyboard", run: () => shortcuts() },
   ]);
 
   // close popovers on outside click / Escape
-  document.addEventListener("click", e => { if (!e.target.closest(".pop,#bLayers,#bKey,#dataBtn,[data-tool]")) closePops(); });
+  document.addEventListener("click", e => { if (!e.target.closest(".pop,#bLayers,#bKey,#bView,#dataBtn,[data-tool]")) closePops(); });
 
   // keyboard shortcuts
   document.addEventListener("keydown", e => {
@@ -190,19 +204,56 @@ function initShell() {
   initTooltips();
 }
 
+/* the scale bar under the map: 1 map unit = 2 km */
+function drawScale() {
+  const bar = document.getElementById("scaleBar"); if (!bar || !svg.clientWidth) return;
+  const kmPerPx = KM_PER_UNIT / Math.min(svg.clientWidth / vb.w, svg.clientHeight / vb.h);
+  const km = [5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000].find(k => k / kmPerPx >= 64) || 5000;
+  bar.firstElementChild.style.width = Math.round(km / kmPerPx) + "px"; bar.lastElementChild.textContent = km.toLocaleString("en-US") + " km";
+}
+
+/* switch the map view (political, terrain, population, wealth, military) */
+function pickView(k) {
+  if (k === viewMode()) return;
+  setView(k);
+  const v = MAP_VIEWS.find(x => x.k === k);
+  toast(v.label + " view", { kind: "info", sub: k === "political" ? "The original map." : v.desc + ". Open Views to switch back." });
+}
+
+/* welcome page: shown once per visit, when the site is opened at its front page */
+function initWelcome() {
+  const w = document.getElementById("welcome"), front = !location.hash || /^#\/?(overview)?$/.test(location.hash);
+  let seen = false; try { seen = sessionStorage.getItem("nationsMap.welcomed") === "1"; } catch {}
+  if (!front || seen) return;
+  hydrateIcons(w);
+  w.hidden = false; document.body.classList.add("welcoming");
+  const close = () => {
+    if (w.hidden) return;
+    try { sessionStorage.setItem("nationsMap.welcomed", "1"); } catch {}
+    w.classList.add("out"); document.body.classList.remove("welcoming");
+    setTimeout(() => { w.hidden = true; }, 420);
+    document.removeEventListener("keydown", onKey, true);
+  };
+  const onKey = e => { if (e.key === "Escape" || e.key === "Enter") { e.preventDefault(); e.stopPropagation(); close(); } };
+  document.addEventListener("keydown", onKey, true);
+  document.getElementById("wcEnter").onclick = close;
+  document.getElementById("wcNations").onclick = close;
+  requestAnimationFrame(() => document.getElementById("wcEnter").focus({ preventScroll: true }));
+}
+
 function togglePop(id, forceOpen) {
   const pop = document.getElementById(id), open = forceOpen || pop.hidden;
   closePops();
   if (!open) return;
   pop.hidden = false;
-  const btn = { layers: "bLayers", mapKey: "bKey", dataPop: "dataBtn" }[id];
+  const btn = { layers: "bLayers", mapKey: "bKey", views: "bView", dataPop: "dataBtn" }[id];
   document.getElementById(btn)?.setAttribute("aria-expanded", "true");
   requestAnimationFrame(() => pop.querySelector("input,button,a")?.focus({ preventScroll: true }));
 }
 function closePops(restore) {
   document.querySelectorAll(".pop:not([hidden])").forEach(p => {
     p.hidden = true;
-    const btn = document.getElementById({ layers: "bLayers", mapKey: "bKey", dataPop: "dataBtn" }[p.id]);
+    const btn = document.getElementById({ layers: "bLayers", mapKey: "bKey", views: "bView", dataPop: "dataBtn" }[p.id]);
     btn?.setAttribute("aria-expanded", "false"); if (restore) btn?.focus();
   });
 }

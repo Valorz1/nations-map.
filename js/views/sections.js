@@ -9,4 +9,4 @@ export const SECTIONS = [
   { k: "encyclopedia", label: "Encyclopedia", ico: "book", desc: "Browse everything in one place", key: "7" },
 ];
 /* which section a route belongs to (for highlighting the nav) */
-export const sectionOf = name => ({ nation: "nations", character: "characters", compare: "rankings" }[name] || name);
+export const sectionOf = name => ({ nation: "nations", character: "characters", compare: "rankings", war: "diplomacy" }[name] || name);

@@ -9,6 +9,23 @@ import { href } from "../ui/router.js";
 import { mount, listMode } from "./common.js";
 import { legendHTML } from "./legend.js";
 import { SECTIONS } from "./sections.js";
+import { worldTotals, estimate, short, money, whole } from "../estimates.js";
+
+/* the record holders, from the estimated figures (nations only, territories counted with their owner) */
+function records() {
+  const rows = R.filter(r => isTop(r) && r.stats).map(r => ({ r, x: estimate(r) })).filter(o => o.x);
+  const best = (f, lowest) => rows.filter(o => f(o) != null).sort((a, b) => (lowest ? f(a) - f(b) : f(b) - f(a)))[0];
+  const out = [];
+  const add = (ic, title, o, v) => { if (o) out.push([ic, title, o.r, v(o)]); };
+  add("globe", "Largest land", best(o => o.x.km2), o => short(o.x.km2) + " km²");
+  add("users", "Most people", best(o => o.x.pop), o => short(o.x.pop));
+  add("grid", "Most crowded", best(o => o.x.density), o => whole(o.x.density) + " per km²");
+  add("compass", "Emptiest", best(o => o.x.density, true), o => (o.x.density < 10 ? o.x.density.toFixed(1) : whole(o.x.density)) + " per km²");
+  add("trend", "Biggest economy", best(o => o.x.gdp), o => money(o.x.gdp));
+  add("star", "Richest people", best(o => o.x.perHead), o => "$" + whole(o.x.perHead) + " each");
+  add("shield", "Largest army", best(o => o.x.troops), o => short(o.x.troops) + " soldiers");
+  return out;
+}
 
 export function overview(args, opts) {
   listMode(opts);
@@ -27,6 +44,8 @@ export function overview(args, opts) {
     ["history", TL.length, "Saved moments", href("history")],
   ];
   const top3 = rated.slice(0, 3);
+  const world = worldTotals();
+  tiles.splice(2, 0, ["users", short(world.pop), "People (estimated)", href("rankings", "people")], ["trend", money(world.gdp), "World economy (est.)", href("rankings", "people")]);
   const showIntro = getPref("introDismissed", false) !== true;
 
   const html = viewHead({
@@ -34,13 +53,7 @@ export function overview(args, opts) {
     sub: `<span>An invented world of ${plural(nations, "nation")}, traced from a hand-drawn pencil map.</span>`,
   }) + `<div class="vb">
     ${past ? `<div class="callout">${icon("history")}<span>You're viewing the past: <b>${esc(past.name)}</b>${past.date ? ` (${esc(past.date)})` : ""}. Figures below are from that moment.</span></div>` : ""}
-    ${showIntro ? `<section class="intro card" aria-label="Getting started">
-      <div class="intro-h"><span class="eyebrow">${icon("compass")}First time here?</span><button type="button" class="icon-btn icon-btn-sm" data-act="dismiss-intro" aria-label="Hide these tips" data-tip="Hide tips">${icon("x")}</button></div>
-      <ol class="intro-steps">
-        <li><span class="n">1</span><span><b>Click any nation</b> on the map to open its dossier: rulers, power, capitals, wars and lore.</span></li>
-        <li><span class="n">2</span><span><b>Drag</b> to move, <b>scroll or pinch</b> to zoom. The tools on the right of the map toggle layers, the key and the timeline.</span></li>
-        <li><span class="n">3</span><span>Press <kbd>/</kbd> to <b>search</b> the whole world, or browse the sections above.</span></li>
-      </ol></section>` : ""}
+    <div class="btn-row quick"><a class="btn btn-sm" href="#/war">${icon("swords")}War simulator</a><a class="btn btn-sm" href="${href("rankings", "compare")}">${icon("scale")}Compare nations</a><a class="btn btn-sm" href="${href("rankings", "people")}">${icon("users")}People &amp; GDP</a></div>
 
     <section class="sec">${secHead("At a glance")}
       <div class="tiles">${tiles.map(([ic, v, k, h]) => `<a class="tile" href="${h}"><span class="ti">${icon(ic, "i-sm")}</span><span class="tv">${v}</span><span class="tk">${k}</span></a>`).join("")}</div>
@@ -55,6 +68,10 @@ export function overview(args, opts) {
           <span class="pw-t"><b>${esc(r.name)}</b><small>${[g.gov, g.leader && "ruled by " + g.leader].filter(Boolean).map(esc).join(" · ") || "Government not recorded"}</small></span>
           <span class="pw-v"><b>${r.stats.rate}</b><small>Rate</small></span></a></li>`;
       }).join("")}</ol>
+    </section>
+
+    <section class="sec">${secHead("World records", "estimated from the map", `<a class="btn btn-xs btn-ghost" href="${href("rankings", "people")}">All figures${icon("arrow-right")}</a>`)}
+      <ul class="recs">${records().map(([ic, title, r, v]) => `<li><a class="rec" href="${href("nation", r.id)}"><span class="rec-ic">${icon(ic, "i-sm")}</span><span class="rec-t"><small>${title}</small><b>${esc(r.name)}</b></span><span class="rec-v">${v}</span></a></li>`).join("")}</ul>
     </section>
 
     <section class="sec">${secHead("Balance of power", "by Rate")}

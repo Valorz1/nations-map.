@@ -57,6 +57,8 @@ export function kindLabel(r) {
 
 /* ---- capitals ----  mark = [level, x, y, smaller, hatched/disputed, destroyed, note] */
 export const caps = r => r.marks.filter(m => !m[5]);
+/* a capital's own name, if one has been given (stored with the nation's government details) */
+export const capName = (r, i) => GOV[r.id]?.capNames?.[i] || "";
 export const infra = r => caps(r).reduce((a, m) => a + m[0], 0);
 export const topLevel = r => caps(r).reduce((a, m) => Math.max(a, m[0]), 0);
 export function allCapitals() {

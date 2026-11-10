@@ -7,10 +7,11 @@ import { esc, emblem, dot, viewHead, secHead, emptyState, tabsHTML, tabKeys, sig
 import { icon } from "../ui/icons.js";
 import { href, go, refresh } from "../ui/router.js";
 import { mount, listMode } from "./common.js";
+import { estimate, worldTotals, short, money, whole } from "../estimates.js";
 
 let tab = "overall", rankKey = getPref("rankKey", "rate"), q = "", dir = "desc", infraSort = { k: "infra", dir: "desc" }, withTerr = true;
-let cmpA = null, cmpB = null;
-const TABS = [["overall", "Overall", "trophy"], ["rate", "Rate", "star"], ["m", "Military", "shield"], ["e", "Economy", "trend"], ["infrastructure", "Infrastructure", "castle"], ["compare", "Compare", "scale"]];
+let cmpA = null, cmpB = null, popSort = { k: "pop", dir: "desc" };
+const TABS = [["overall", "Overall", "trophy"], ["rate", "Rate", "star"], ["m", "Military", "shield"], ["e", "Economy", "trend"], ["infrastructure", "Infrastructure", "castle"], ["people", "People & GDP", "users"], ["compare", "Compare", "scale"]];
 
 const ratedRows = () => R.filter(isRated);
 const matchQ = r => !q || r.name.toLowerCase().includes(q) || (GOV[r.id]?.gov || "").toLowerCase().includes(q);
@@ -30,6 +31,7 @@ function render(args, opts) {
 function body() {
   if (tab === "overall") return overall();
   if (tab === "infrastructure") return infrastructure();
+  if (tab === "people") return people();
   if (tab === "compare") return compare();
   return leaderboard(metric(tab));
 }
@@ -83,12 +85,33 @@ function infrastructure() {
     <p class="foot-note">${icon("info", "i-xs")}Infrastructure is the number inside each capital's circle on the map; totals add up every capital. “Large capitals” have the bigger circle, meaning a larger population. Destroyed cities aren't counted.</p>`;
 }
 
+/* ---- population & economy, estimated from the map (see js/estimates.js) ---- */
+function people() {
+  const rows = R.filter(r => !r.of && !r.kind).map(r => ({ r, x: estimate(r) })).filter(o => o.x && matchQ(o.r)).map(({ r, x }) => ({ r, name: r.name, pop: x.pop, km2: x.km2, density: x.density, gdp: x.gdp ?? -1, perHead: x.perHead ?? -1, x }));
+  const k = popSort.k, s = popSort.dir === "desc" ? -1 : 1;
+  rows.sort((a, b) => k === "name" ? s * a.name.localeCompare(b.name) : (s * (a[k] - b[k])) || a.name.localeCompare(b.name));
+  const mxP = Math.max(1, ...rows.map(o => o.pop)), mxG = Math.max(1, ...rows.map(o => o.gdp)), w = worldTotals();
+  const th = (key, label, num = true) => `<th class="${num ? "num" : ""}"${popSort.k === key ? ` aria-sort="${popSort.dir === "desc" ? "descending" : "ascending"}"` : ""}><button type="button" data-psort="${key}">${label}${popSort.k === key ? icon("chev-down", "i-xs" + (popSort.dir === "asc" ? " flip" : "")) : ""}</button></th>`;
+  return `<div class="infra est"><div><b>${short(w.pop)}</b><small>world population</small></div><div><b>${money(w.gdp)}</b><small>world economy (GDP)</small></div><div><b>${w.pop ? "$" + whole(w.gdp / w.pop) : "—"}</b><small>average income per person</small></div><div><b>${short(w.km2)}</b><small>km² of land</small></div></div>
+    <div class="tools-row">${searchTools()}</div>
+    <div class="table-wrap"><table class="table"><caption class="sr-only">Estimated population and economy by nation</caption>
+      <thead><tr>${th("name", "Nation", false)}${th("pop", "Population")}${th("gdp", "GDP")}${th("perHead", "Per person")}${th("km2", "Land (km²)")}${th("density", "People / km²")}</tr></thead>
+      <tbody>${rows.map(o => `<tr data-href="${href("nation", o.r.id)}"><td><div class="nm">${emblem(o.r, 22)}<a href="${href("nation", o.r.id)}">${esc(o.r.name)}</a></div></td>
+        <td class="num"><div class="numbar"><span class="hbar"><i style="width:${(o.pop / mxP * 100).toFixed(1)}%"></i></span>${short(o.pop)}</div></td>
+        <td class="num"><div class="numbar"><span class="hbar" style="--sc:var(--c-eco)"><i style="width:${(Math.max(0, o.gdp) / mxG * 100).toFixed(1)}%"></i></span>${money(o.x.gdp)}</div></td>
+        <td class="num">${o.x.perHead == null ? "—" : "$" + whole(o.x.perHead)}</td><td class="num">${short(o.km2)}</td><td class="num">${o.density < 10 ? o.density.toFixed(1) : whole(o.density)}</td></tr>`).join("")}</tbody></table></div>
+    <p class="foot-note">${icon("info", "i-xs")}These are estimates worked out from the map, not numbers from the sketch. Population comes from each nation's land area, the kind of land (desert, jungle, highlands and the Blight hold far fewer people) and the size of its capitals. GDP is population × income per person, which rises with the Economy rating. Territories are counted with their owner. Move a border or edit a rating and the figures update.</p>`;
+}
+
 /* ---- head-to-head comparison ---- */
 function facts(r) {
   const rel = relationsOf(r.id, curRel);
-  return { rate: r.stats?.rate, m: r.stats?.m, e: r.stats?.e, caps: caps(r).length, infra: infra(r), terr: terr(r.id).length, nb: neighbours(r.id).length, allies: rel.allies.length, wars: rel.wars.length, chars: charsOf(r.id).length };
+  const est = estimate(r) || {};
+  return { pop: est.pop, gdp: est.gdp, perHead: est.perHead == null ? null : Math.round(est.perHead), km2: est.km2, troops: est.troops, rate: r.stats?.rate, m: r.stats?.m, e: r.stats?.e, caps: caps(r).length, infra: infra(r), terr: terr(r.id).length, nb: neighbours(r.id).length, allies: rel.allies.length, wars: rel.wars.length, chars: charsOf(r.id).length };
 }
-const ROWS = [["rate", "Rate", "star", true], ["m", "Military", "shield", true], ["e", "Economy", "trend", true], ["caps", "Capitals", "castle"], ["infra", "Total infrastructure", "castle"], ["terr", "Territories", "pin"], ["nb", "Neighbours", "grid"], ["allies", "Allies", "link"], ["wars", "Wars", "swords"], ["chars", "Characters", "users"]];
+const ROWS = [["rate", "Rate", "star", true], ["m", "Military", "shield", true], ["e", "Economy", "trend", true], ["caps", "Capitals", "castle"], ["infra", "Total infrastructure", "castle"], ["terr", "Territories", "pin"], ["nb", "Neighbours", "grid"], ["allies", "Allies", "link"], ["wars", "Wars", "swords"], ["chars", "Characters", "users"],
+  ["pop", "Population (est.)", "users", false, short], ["gdp", "GDP (est.)", "trend", false, money], ["perHead", "Income per person", "trend", false, v => "$" + whole(v)],
+  ["troops", "Army (est.)", "shield", false, short], ["km2", "Land, km²", "grid", false, short]];
 function compare() {
   const pool = sortedByName(ratedRows());
   if (!cmpA || !byId[cmpA]) cmpA = pool[0]?.id;
@@ -97,16 +120,17 @@ function compare() {
   const sel = (id, v) => `<select id="${id}" class="select" aria-label="${id === "ca" ? "First" : "Second"} nation">${pool.map(r => `<option value="${r.id}"${r.id === v ? " selected" : ""}>${esc(r.name)}</option>`).join("")}</select>`;
   const fa = facts(A), fb = facts(B);
   let winsA = 0, winsB = 0;
-  const rows = ROWS.map(([k, label, ico, core]) => {
+  const rows = ROWS.map(([k, label, ico, core, fmt]) => {
+    const show = v => (v == null ? "—" : fmt ? fmt(v) : v);
     const a = fa[k], b = fb[k], mx = Math.max(1, a ?? 0, b ?? 0, core ? MAX[k] : 0);
     const better = a == null || b == null || a === b ? 0 : a > b ? 1 : -1;
     if (core && better === 1) winsA++; if (core && better === -1) winsB++;
     const diff = a != null && b != null ? a - b : null;
-    return `<div class="cmp-row${core ? " core" : ""}"><div class="cmp-v a${better === 1 ? " win" : ""}">${a ?? "—"}</div>
+    return `<div class="cmp-row${core ? " core" : ""}"><div class="cmp-v a${better === 1 ? " win" : ""}">${show(a)}</div>
       <div class="cmp-bar a"><i style="width:${a == null ? 0 : (a / mx * 100).toFixed(1)}%"></i></div>
-      <div class="cmp-k">${icon(ico, "i-xs")}<span>${label}</span>${diff ? `<em>${signed(Math.abs(diff))}</em>` : ""}</div>
+      <div class="cmp-k">${icon(ico, "i-xs")}<span>${label}</span>${diff ? `<em>${fmt ? "+" + fmt(Math.abs(diff)) : signed(Math.abs(diff))}</em>` : ""}</div>
       <div class="cmp-bar b"><i style="width:${b == null ? 0 : (b / mx * 100).toFixed(1)}%"></i></div>
-      <div class="cmp-v b${better === -1 ? " win" : ""}">${b ?? "—"}</div></div>`;
+      <div class="cmp-v b${better === -1 ? " win" : ""}">${show(b)}</div></div>`;
   }).join("");
   const side = (r, cls) => { const g = GOV[r.id] || {}, rk = rankOf(r, "rate"); return `<a class="cmp-side ${cls}" href="${href("nation", r.id)}">${emblem(r, 46)}<b>${esc(r.name)}</b><small>${[g.gov, g.leader].filter(Boolean).map(esc).join(" · ") || "&nbsp;"}</small>${rk ? `<span class="pill gold">#${rk.rank} by Rate</span>` : ""}</a>`; };
   const verdict = winsA === winsB ? `${esc(A.name)} and ${esc(B.name)} are evenly matched on the core ratings.`
@@ -124,6 +148,7 @@ export const rankingsView = {
     const t = e.target.closest("[data-tab]");
     if (t) { tab = t.dataset.tab; q = ""; go(tab === "compare" && cmpA ? `compare/${cmpA}/${cmpB}` : `rankings/${tab}`, { keepFocus: true }); setTimeout(() => document.getElementById("tab-" + tab)?.focus({ preventScroll: true })); return true; }
     const rk = e.target.closest("[data-rk]"); if (rk) { rankKey = rk.dataset.rk; setPref("rankKey", rankKey); refresh(); return true; }
+    const ps = e.target.closest("[data-psort]"); if (ps) { const k = ps.dataset.psort; popSort = { k, dir: popSort.k === k ? (popSort.dir === "desc" ? "asc" : "desc") : (k === "name" ? "asc" : "desc") }; refresh(); return true; }
     const is = e.target.closest("[data-isort]"); if (is) { const k = is.dataset.isort; infraSort = { k, dir: infraSort.k === k ? (infraSort.dir === "desc" ? "asc" : "desc") : (k === "name" ? "asc" : "desc") }; refresh(); return true; }
     const a = e.target.closest("[data-act]")?.dataset.act;
     if (a === "dir") { dir = dir === "desc" ? "asc" : "desc"; refresh(); return true; }

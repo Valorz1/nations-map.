@@ -44,6 +44,7 @@ svg#map.dragging{cursor:grabbing}
 /* border editor */
 svg.editing{cursor:crosshair}
 svg.editing .border{stroke:#b0452f;stroke-width:2.4}
+svg.editing .border.grab{stroke:#e2b04a;stroke-width:3.4}
 svg.editing .region:hover{filter:none}
 .bcur{fill:rgba(226,176,74,.12);stroke:#b07a12;stroke-width:1.5;stroke-dasharray:4 3;pointer-events:none}
 
@@ -64,3 +65,63 @@ svg.editing .region:hover{filter:none}
 body.past svg#map{filter:sepia(.25)}
 
 @media (prefers-reduced-motion:reduce){.region{transition:none}}
+
+/* ---------- optional terrain view (js/map/terrain.js) ----------
+   An extra layer over the nation colours; hidden unless the Terrain switch is on. */
+.terrain{display:none}
+svg.terrain .terrain{display:inline}
+.t-riv-u{fill:none;stroke:#3f7ca6;stroke-linecap:round;stroke-linejoin:round}
+.t-riv{fill:none;stroke:#9ccbe8;stroke-linecap:round;stroke-linejoin:round}
+.t-lake{fill:#9ccbe8;stroke:#3f7ca6;stroke-width:1.6;stroke-linejoin:round}
+.t-dune{fill:none;stroke:#b08f4e;stroke-width:1.1;stroke-linecap:round;opacity:.8}
+.t-dead{fill:none;stroke:#565b3a;stroke-width:1.1;stroke-linecap:round;opacity:.75}
+.t-hill{fill:none;stroke:#7d7355;stroke-width:1.2;stroke-linecap:round;opacity:.8}
+.t-wood{fill:#7fa868;stroke:#4c7340;stroke-width:.8}
+.t-jungle{fill:#5c9552;stroke:#356a35;stroke-width:.8}
+.t-mt-face{fill:#f4eeda}
+.t-mt-shadow{fill:#a39474}
+.t-mt-line{fill:none;stroke:#5b5140;stroke-width:1.3;stroke-linejoin:round;stroke-linecap:round}
+/* nation fills are hidden behind the terrain, so borders carry the politics: make them a little stronger */
+svg.terrain:not(.editing) .border{stroke-width:2}
+svg.terrain .border-under{opacity:.7}
+.t-name{font:italic 600 13px var(--serif);fill:#5b4a2e;letter-spacing:.06em;paint-order:stroke;stroke:rgba(255,253,244,.8);stroke-width:3px;stroke-linejoin:round}
+.t-name.water{fill:#2f5d80}
+.t-name.wood{fill:#3d6a35}
+
+/* ---------- data views: population, wealth, military (js/map/views.js) ----------
+   One flat-coloured layer over the nation colours; hidden in the political view. */
+.dataview{display:none}
+svg.dataview-on .dataview{display:inline}
+.dataview path{stroke-width:1.2}
+svg.dataview-on:not(.editing) .border{stroke-width:2}
+/* richer terrain: grass, river banks, roads, farmland, pines, snow */
+.t-tuft{fill:none;stroke:#8ea767;stroke-width:1;stroke-linecap:round;opacity:.7}
+.t-bank{fill:none;stroke:#b3d68c;stroke-width:30;stroke-linecap:round;stroke-linejoin:round;opacity:.42}
+.t-road-u{fill:none;stroke:#fbf4dc;stroke-width:3.2;stroke-linecap:round;opacity:.75}
+.t-road{fill:none;stroke:#8a6a44;stroke-width:1.5;stroke-linecap:round;stroke-dasharray:6 4}
+.t-field{fill:#e2d68a;stroke:#a8985a;stroke-width:.8;stroke-linejoin:round}
+.t-furrow{fill:none;stroke:#b3a25c;stroke-width:.7}
+.t-pine{fill:#5f8f57;stroke:#3a6534;stroke-width:.8;stroke-linejoin:round}
+.t-mt-face{fill:#efe7cf}
+.t-snow{fill:#fff;stroke:#d9d6cc;stroke-width:.5;stroke-linejoin:round}
+/* terrain details: villages, marsh, oasis, the Blight's pools and ruins; softer fields */
+.t-field{fill:#ddd596;stroke:#a89c62;stroke-width:.7;opacity:.9}
+.t-house{fill:#f6efdc;stroke:#5b4a2e;stroke-width:.9;stroke-linejoin:round}
+.t-roof{fill:#b0563c;stroke:#5b4a2e;stroke-width:.9;stroke-linejoin:round}
+.t-marsh{fill:none;stroke:#5f8a6a;stroke-width:1;stroke-linecap:round;opacity:.85}
+.t-cactus{fill:none;stroke:#6f8f4a;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.t-palm{fill:none;stroke:#3d6a35;stroke-width:1.4;stroke-linecap:round}
+.t-toxic{fill:#93a85a;stroke:#565b3a;stroke-width:1.2}
+.t-ruin{fill:none;stroke:#4a4a3a;stroke-width:1.5;stroke-linecap:round}
+.t-mt-line{stroke-width:1.1}
+/* terrain round 3: bridges, mines, the volcano, watchtowers, wide land names */
+.t-bridge{fill:#f6efdc;stroke:#5b4a2e;stroke-width:1.1;stroke-linejoin:round}
+.t-mine{fill:#3a342c;stroke:#f1e9d2;stroke-width:1}
+.t-volcano{fill:#6e6558;stroke:#3a342c;stroke-width:1.3;stroke-linejoin:round}
+.t-lava{fill:#c8452c}
+.t-smoke{fill:#8d8a84;opacity:.6}
+.t-tower{fill:#e9e2cf;stroke:#3d3a30;stroke-width:.9;stroke-linejoin:round}
+.t-name.land{font-size:15px;letter-spacing:.34em;fill:#6b6a45;opacity:.85;font-style:normal;font-variant:small-caps}
+/* names given to capital cities */
+.capname{font:italic 600 12.5px var(--serif);fill:#262b36;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:rgba(255,255,255,.82);stroke-width:3px;stroke-linejoin:round}
+.hide-marks .capname{display:none}

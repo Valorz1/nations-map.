@@ -38,6 +38,7 @@ function render(args, opts) {
 
   const html = viewHead({
     eyebrow: "Diplomacy", ico: "swords", title: "Wars &amp; Alliances",
+    acts: `<a class="btn btn-xs" href="#/war">${icon("scale")}War simulator</a>`,
     sub: `<span>${plural(wars.length, "war")} · ${plural(als.length, "alliance")} · ${ended.length} ended</span>${past ? `<span class="pill gold">${icon("history")}${esc(past.name)}</span>` : ""}`,
   }) + `<div class="vb">
     <div class="tiles">

@@ -1,6 +1,6 @@
 /* One searchable index of everything in the world — shared by the global
    search palette and the Encyclopedia, so both always agree. */
-import { R, byId, kindLabel, isTerritory, isMovement, govTypes, relTitle, relActive, allCapitals, caps } from "./model.js";
+import { capName, R, byId, kindLabel, isTerritory, isMovement, govTypes, relTitle, relActive, allCapitals, caps } from "./model.js";
 import { CHARS, GOV, TL } from "./store.js";
 import { curRel } from "./map/engine.js";
 import { emblem } from "./ui/dom.js";
@@ -47,8 +47,8 @@ export function buildIndex() {
       href: href("diplomacy"), art: icon(war ? "swords" : "link"), keys: [x.notes, x.outcome].filter(Boolean).join(" "), rel: x, i });
   });
   for (const c of allCapitals()) {
-    const n = caps(c.r).length;
-    out.push({ cat: "capitals", type: "Capital", title: `${c.r.name} — ${n > 1 ? "capital " + (c.i + 1) : "capital"}`,
+    const n = caps(c.r).length, own = capName(c.r, c.r.marks.indexOf(c.m));
+    out.push({ cat: "capitals", type: "Capital", title: own ? `${own} — capital of ${c.r.name}` : `${c.r.name} — ${n > 1 ? "capital " + (c.i + 1) : "capital"}`,
       sub: `Infrastructure level ${c.level} · ${c.small ? "smaller" : "larger"} population${c.disputed ? " · disputed" : ""}${c.note ? " · " + c.note : ""}`,
       href: href("nation", c.r.id), art: `<span class="circ${c.small ? " sm" : ""}${c.disputed ? " x2" : ""}">${c.level}</span>`, keys: "capital city", cap: [c.x, c.y], r: c.r });
   }

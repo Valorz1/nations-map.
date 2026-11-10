@@ -43,17 +43,18 @@
 
     <div class="rail" role="toolbar" aria-label="Map tools" aria-orientation="vertical">
       <div class="rail-group">
-        <button id="zIn" type="button" aria-label="Zoom in" data-tip="Zoom in" data-icon="plus"></button>
-        <button id="zOut" type="button" aria-label="Zoom out" data-tip="Zoom out" data-icon="minus"></button>
-        <button id="zFit" type="button" aria-label="Show whole map" data-tip="Whole map" data-icon="maximize"></button>
+        <button id="zIn" type="button" aria-label="Zoom in" data-tip="Zoom in" data-icon="plus"><span class="rl">Zoom in</span></button>
+        <button id="zOut" type="button" aria-label="Zoom out" data-tip="Zoom out" data-icon="minus"><span class="rl">Zoom out</span></button>
+        <button id="zFit" type="button" aria-label="Show whole map" data-tip="Whole map" data-icon="maximize"><span class="rl">Whole map</span></button>
       </div>
       <div class="rail-group">
-        <button id="bLayers" type="button" aria-label="Map layers" aria-expanded="false" aria-controls="layers" data-tip="Layers" data-icon="layers"></button>
-        <button id="bKey" type="button" aria-label="Map key" aria-expanded="false" aria-controls="mapKey" data-tip="Map key" data-icon="legend"></button>
+        <button id="bView" type="button" aria-label="Map views" aria-expanded="false" aria-controls="views" data-tip="Map views: political, terrain, population, wealth, military" data-icon="globe"><span class="rl">Views</span></button>
+        <button id="bLayers" type="button" aria-label="Map layers" aria-expanded="false" aria-controls="layers" data-tip="Layers" data-icon="layers"><span class="rl">Layers</span></button>
+        <button id="bKey" type="button" aria-label="Map key" aria-expanded="false" aria-controls="mapKey" data-tip="Map key" data-icon="legend"><span class="rl">Key</span></button>
       </div>
       <div class="rail-group">
-        <button id="bTime" type="button" aria-label="Timeline" aria-pressed="false" data-tip="Timeline" data-icon="history"></button>
-        <button id="bEdit" type="button" aria-label="Edit borders" aria-pressed="false" data-tip="Edit borders" data-icon="pen"></button>
+        <button id="bTime" type="button" aria-label="Timeline" aria-pressed="false" data-tip="Timeline" data-icon="history"><span class="rl">Timeline</span></button>
+        <button id="bEdit" type="button" aria-label="Edit borders" aria-pressed="false" data-tip="Edit borders" data-icon="pen"><span class="rl">Borders</span></button>
       </div>
     </div>
 
@@ -66,6 +67,8 @@
       <label for="tGrid"><span>Grid<small>A–J · 1–7 reference</small></span><input id="tGrid" class="switch" type="checkbox" checked></label>
     </div>
     <div id="mapKey" class="pop pop-map pop-key" hidden></div>
+    <div id="views" class="pop pop-map pop-views" hidden></div>
+    <div id="viewKey" class="viewkey" hidden></div>
 
     <button id="pToggle" type="button" class="ptog" aria-label="Hide panel" data-icon="chev-right"></button>
     <div id="tip" role="tooltip"></div>
@@ -93,6 +96,8 @@
         <button id="ebDone" type="button" class="btn btn-sm btn-primary"><span data-icon="check"></span>Done</button>
       </div>
     </div>
+
+    <div id="scaleBar" class="scalebar" aria-hidden="true"><i></i><span></span></div>
 
     <div id="boot" class="boot" role="status"><div class="boot-mark"><img src="assets/emblem.svg" alt="" width="56" height="56"></div><p>Unrolling the map…</p></div>
   </div>
@@ -125,6 +130,24 @@
       <kbd>Esc</kbd></div>
     <ul id="palList" class="palette-list" role="listbox" aria-label="Results"></ul>
     <div class="palette-foot"><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>Enter</kbd> open</span><span><kbd>Esc</kbd> close</span></div>
+  </div>
+</div>
+
+<div id="welcome" class="welcome" role="dialog" aria-modal="true" aria-labelledby="wcTitle" hidden>
+  <div class="wc-card">
+    <img class="wc-mark" src="assets/emblem.svg" alt="" width="84" height="84">
+    <p class="wc-eyebrow">Atlas &amp; encyclopedia of the known world</p>
+    <h1 id="wcTitle">Political Map of the Nations</h1>
+    <p class="wc-lead">An invented world, traced from a hand-drawn pencil map. Explore its nations, rulers, wars and history.</p>
+    <ul class="wc-tips">
+      <li><span data-icon="flag"></span><span><b>Tap a nation</b> to open its dossier</span></li>
+      <li><span data-icon="maximize"></span><span><b>Drag</b> to move, <b>pinch or scroll</b> to zoom</span></li>
+      <li><span data-icon="globe"></span><span>Try the other <b>map views</b>: terrain, population, wealth, military</span></li>
+    </ul>
+    <div class="wc-acts">
+      <button id="wcEnter" type="button" class="btn btn-primary wc-enter">Enter the atlas<span data-icon="arrow-right"></span></button>
+      <a id="wcNations" class="btn" href="#/nations">Browse the nations</a>
+    </div>
   </div>
 </div>
 
