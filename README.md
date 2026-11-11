@@ -23,11 +23,12 @@ The original borders were traced directly from my brother's hand-drawn pencil ma
 ### Map symbols and information
 
 - **Nation ratings:** Each nation has a Rate, Military Power (M) and Economic Power (E) rating.
-- **Capital cities:** White circles identify capitals. Numbers indicate infrastructure levels, while circle sizes represent population.
+- **Capital cities:** White circles identify capitals. Numbers indicate infrastructure levels, while circle sizes represent population. The number is the infrastructure level: Ruined (1–2, destroyed or almost nothing left), Basic (3–4), Developed (5–6), Advanced (7–8) and Metropolis (9–10). Ruined cities have a broken, cracked circle; well-built ones get rings and a skyline of towers.
+- **World size:** The whole world holds 8 billion people and a GDP of $50 trillion. Borders, land and ratings decide each nation's share.
 - **Disputed territories:** Hatched areas marked `DIS` identify disputed land.
 - **Resistance movements:** Dotted areas represent resistance movements, including the Teddy Resistance and Lego Resistance.
 - **The Blight:** An infected territory overrun by zombies.
-- **Controlled territories:** Territories are displayed in their owner's colour, including Shero U. (Sherolean Empire) and Marmites (Marbonese).
+- **Parts of a nation:** Some nations have separate parts shown in the same colour: RUC (Royalist Union of Cars), F.U.C. (Federal Union of Cars), Shero U. (Sherolean Empire), Marmites (Marbonese), EFC (Elarion Federation), Axis (Multi-Axis), Allies (Multi Allies) and Riv Rep (Federal Republic of the 5 Rivers). Tapping one opens its nation's dossier, and its people, land and capitals count toward that nation.
 
 ---
 
@@ -42,10 +43,12 @@ The website includes several sections for exploring and understanding the fictio
 | **Nation Dossiers** | Detailed nation profiles featuring emblems, rankings, statistics, capitals, infrastructure, governments, populations, relations and lore. |
 | **Rankings** | Overall power rankings, military and economic leaderboards, infrastructure statistics and nation comparisons. |
 | **Characters** | Profiles of rulers and important figures, including portraits, biographies, achievements and historical significance. |
-| **Diplomacy** | Relations between nations, alliances, wars, historical conflicts and their outcomes. |
+| **Diplomacy** | Relations between nations, alliances, wars, historical conflicts and their outcomes. Declaring a war or alliance reports it in the news. |
+| **News** | *The World Herald*: nations publish announcements, declarations, treaties and events, dated by the in-world calendar. Advance the year when a round of the roleplay ends. |
 | **History** | Saved historical moments, map snapshots, territorial changes, changes in power and historical rulers. |
 | **Encyclopedia** | A searchable reference for nations, characters, governments, wars, alliances, capitals and historical events. |
 | **Map Tools** | Zoom controls, map layers, map key, timeline and border editing. |
+| **Map Views** | Political, Terrain (shaded relief, mountain ranges, rivers, forests, cities, motorways and railways that follow the land, modern farmland, airports, oil fields and wind farms), Population, Wealth and Military. |
 | **Global Search** | Search across the world using `/` or `Ctrl + K`. |
 
 ---
@@ -89,7 +92,7 @@ Below is a selection of nations and their current recorded statistics.
 |---|---|
 | `/` | Open search |
 | `Ctrl + K` | Open global search |
-| `1–7` | Switch between sections |
+| `1–8` | Switch between sections |
 | `T` | Open the timeline |
 | `L` | Open map layers |
 | `?` | Show all keyboard shortcuts |
@@ -108,6 +111,7 @@ Edits are automatically saved in your browser, including:
 - Wars and alliances
 - Timeline events
 - Characters and their biographies
+- News stories, the in-world year, and each nation's factbook (motto, anthem, currency, language, religion…)
 
 ### Publishing your changes
 

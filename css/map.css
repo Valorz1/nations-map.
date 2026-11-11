@@ -29,6 +29,17 @@ svg#map.dragging{cursor:grabbing}
 .dis{font:600 9.5px var(--ui);letter-spacing:.12em;fill:#7a2e3e;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:#fff;stroke-width:2.5px}
 .note{font-family:var(--serif);font-style:italic;fill:#4a4f5c;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:rgba(255,255,255,.7);stroke-width:3px}
 .mk circle{fill:#fff;stroke:#2c3240;stroke-width:1.6}
+/* how big a place each capital is: town, city, large city, great city, metropolis */
+.mk .mk-wall{fill:#f6efdc;stroke:#2c3240;stroke-width:1.1}
+.mk .mk-band{fill:#e2b04a;stroke:#8a6414;stroke-width:1.1}
+.mk-tower{fill:#5a6378;stroke:#2c3240;stroke-width:.9;stroke-linejoin:round}
+.mk-tower.hi{fill:#e2b04a;stroke:#5b4210}
+.mk-spire{fill:none;stroke:#2c3240;stroke-width:1.1;stroke-linecap:round}
+.mk.mk-ruin circle.mk-c{fill:#e6e2d8;stroke:#5e5a52;stroke-width:1.5;stroke-dasharray:6 2.4}
+.mk-crack{fill:none;stroke:#6b6455;stroke-width:1;stroke-linecap:round;stroke-linejoin:round}
+.mk-ruin text{fill:#4a463f}
+.mk-adv .mk-c,.mk-metro .mk-c{stroke-width:1.9}
+.mk-metro text{font-weight:700}
 .mk text{font:600 15px var(--mono);fill:#1f2430;text-anchor:middle;dominant-baseline:central}
 .mk,.tag{pointer-events:none}
 .tag rect.o{fill:#fffdf7;stroke:#2c3240;stroke-width:1.4}
@@ -67,26 +78,102 @@ body.past svg#map{filter:sepia(.25)}
 @media (prefers-reduced-motion:reduce){.region{transition:none}}
 
 /* ---------- optional terrain view (js/map/terrain.js) ----------
-   An extra layer over the nation colours; hidden unless the Terrain switch is on. */
+   An extra layer over the nation colours; hidden unless the Terrain switch is on.
+   The land itself is a shaded-relief picture; everything below is drawn on top of it. */
 .terrain{display:none}
 svg.terrain .terrain{display:inline}
-.t-riv-u{fill:none;stroke:#3f7ca6;stroke-linecap:round;stroke-linejoin:round}
-.t-riv{fill:none;stroke:#9ccbe8;stroke-linecap:round;stroke-linejoin:round}
-.t-lake{fill:#9ccbe8;stroke:#3f7ca6;stroke-width:1.6;stroke-linejoin:round}
-.t-dune{fill:none;stroke:#b08f4e;stroke-width:1.1;stroke-linecap:round;opacity:.8}
-.t-dead{fill:none;stroke:#565b3a;stroke-width:1.1;stroke-linecap:round;opacity:.75}
-.t-hill{fill:none;stroke:#7d7355;stroke-width:1.2;stroke-linecap:round;opacity:.8}
-.t-wood{fill:#7fa868;stroke:#4c7340;stroke-width:.8}
-.t-jungle{fill:#5c9552;stroke:#356a35;stroke-width:.8}
-.t-mt-face{fill:#f4eeda}
-.t-mt-shadow{fill:#a39474}
-.t-mt-line{fill:none;stroke:#5b5140;stroke-width:1.3;stroke-linejoin:round;stroke-linecap:round}
 /* nation fills are hidden behind the terrain, so borders carry the politics: make them a little stronger */
 svg.terrain:not(.editing) .border{stroke-width:2}
 svg.terrain .border-under{opacity:.7}
+/* water: rivers are filled ribbons that widen downstream, with a darker bank line under them */
+.t-rib-u{fill:#3f7ca6;stroke:#3f7ca6;stroke-width:2.2;stroke-linejoin:round}
+.t-rib{fill:#9ccbe8;stroke:#9ccbe8;stroke-width:.4;stroke-linejoin:round}
+.t-riv-u{fill:none;stroke:#3f7ca6;stroke-linecap:round;stroke-linejoin:round}
+.t-riv{fill:none;stroke:#9ccbe8;stroke-linecap:round;stroke-linejoin:round}
+.t-ripple{fill:none;stroke:#cfe6f4;stroke-width:1.1;stroke-linecap:round;opacity:.9}
+.t-lake{fill:#9ccbe8;stroke:#3f7ca6;stroke-width:1.6;stroke-linejoin:round}
+/* open land */
+.t-tuft{fill:none;stroke:#8ea767;stroke-width:1;stroke-linecap:round;opacity:.6}
+.t-dune{fill:#d6b979;stroke:#b08f4e;stroke-width:.9;stroke-linejoin:round;opacity:.85}
+.t-sand{fill:none;stroke:#b08f4e;stroke-width:1.6;stroke-linecap:round;opacity:.55}
+.t-dead{fill:none;stroke:#565b3a;stroke-width:1.1;stroke-linecap:round;opacity:.75}
+.t-hill{fill:none;stroke:#7d7355;stroke-width:1.15;stroke-linecap:round;opacity:.75}
+/* trees: a soft ground shadow, the crown, then a highlight on the lit side */
+.t-shadow{fill:#3b4a28;opacity:.16}
+.t-wood{fill:#83ab69;stroke:#46693a;stroke-width:.8;stroke-linejoin:round}
+.t-jungle{fill:#5c9552;stroke:#2f5f30;stroke-width:.8;stroke-linejoin:round}
+.t-glint{fill:none;stroke:#d4e8b4;stroke-width:1.1;stroke-linecap:round;opacity:.7}
+.t-pine{fill:#5f8f57;stroke:#34602f;stroke-width:.8;stroke-linejoin:round}
+.t-pine-dark{fill:#3f6c3a;opacity:.55}
+/* mountains: a lit west face, a shaded east face, snow on the tallest */
+.t-mt-face{fill:#efe7cf}
+.t-mt-shadow{fill:#a89878}
+.t-mt-line{fill:none;stroke:#54493a;stroke-width:1.05;stroke-linejoin:round;stroke-linecap:round}
+.t-snow{fill:#fff}
+.t-snow-sh{fill:#d8dde6}
+/* people: roads, bridges, fields, villages */
+/* a modern road atlas: white paved roads, amber motorways with a centre line, railways in black and white */
+.t-road-edge{fill:none;stroke:#7d8494;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.t-road-edge.major{stroke:#8b4a1e;stroke-width:6.4}
+.t-road{fill:none;stroke:#fffdf6;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.t-road.major{stroke:#f3ae5b;stroke-width:4.4}
+.t-road-line{fill:none;stroke:#fff8e6;stroke-width:.8;stroke-dasharray:5 4;stroke-linecap:round}
+.t-rail-u{fill:none;stroke:#2f3440;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.t-rail{fill:none;stroke:#fff;stroke-width:1.5;stroke-dasharray:6 6;stroke-linejoin:round}
+/* cities: the built-up area, its blocks and the denser downtown */
+.t-urban{fill:#ddd6c9;stroke:#a89f8f;stroke-width:.8;stroke-linejoin:round}
+.t-block{fill:#bdb4a4}
+.t-block.down{fill:#8f8676}
+/* a ruined city: grey rubble on scorched ground */
+.t-urban.ruin{fill:#cfcbc2;stroke:#8a857b;stroke-dasharray:3 2}
+.t-rubble{fill:#7d776c}
+.t-crater{fill:#5e5a52;fill-opacity:.5;stroke:#4a463f;stroke-width:.5}
+.t-town{fill:#c9c1b2;stroke:#5e5a52;stroke-width:.7;stroke-linejoin:round}
+.t-runway{fill:#9aa0aa;stroke:#5e636d;stroke-width:.7;stroke-linejoin:round}
+.t-runway-line{fill:none;stroke:#fff;stroke-width:.6;stroke-dasharray:2 2}
+.t-wind{fill:none;stroke:#f8f8f4;stroke-width:1.5;stroke-linecap:round;paint-order:stroke;filter:drop-shadow(0 0 .6px #555)}
+.t-silo{fill:#e9e4d8;stroke:#6b6455;stroke-width:.6}
+.t-town-dot{fill:#fff;stroke:#2c3240;stroke-width:1.3}
+.t-dam{fill:none;stroke:#5e636d;stroke-width:4;stroke-linecap:square}
+.t-base{fill:#cdd3bf;fill-opacity:.7;stroke:#5e636d;stroke-width:.9;stroke-dasharray:3 2}
+.t-hangar{fill:#8c929c;stroke:#4a4f59;stroke-width:.7}
+.t-apron{fill:#b4b8bf;stroke:#6e737c;stroke-width:.6}
+.t-solar{fill:#2f4a6e;stroke:#a9bad0;stroke-width:.3}
+.t-quay{fill:none;stroke:#5e636d;stroke-width:1.6;stroke-linecap:round}
+.t-crane{fill:none;stroke:#c8452c;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+.t-power{fill:none;stroke:#7d8494;stroke-width:.6;stroke-dasharray:1 .6}
+.t-pylon{fill:none;stroke:#5e636d;stroke-width:.7;stroke-linejoin:round}
+.t-pump{fill:none;stroke:#3b4252;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+.t-bridge{fill:#f6efdc;stroke:#5b4a2e;stroke-width:1.1;stroke-linejoin:round}
+/* farmland: large modern fields with furrows, centre-pivot irrigation circles and windbreaks */
+.t-f{stroke:#8d7d4a;stroke-width:.55;stroke-linejoin:round;stroke-opacity:.6}
+.t-f-wheat{fill:#e6cf7a}
+.t-f-barley{fill:#eee0a4}
+.t-f-green{fill:#b9cf7a}
+.t-f-pasture{fill:#a9c983}
+.t-f-plough{fill:#c9a676}
+.t-f-fallow{fill:#d7cfa0}
+.t-furrow{fill:none;stroke:#7a6332;stroke-width:.5;stroke-opacity:.38}
+.t-hedge{fill:none;stroke:#5b7d43;stroke-width:2.2;stroke-linecap:round;stroke-dasharray:.1 2.6}
+.t-pivot{fill:#9fc46e;stroke:#6f8f44;stroke-width:.6}
+.t-house{fill:#f6efdc;stroke:#5b4a2e;stroke-width:.9;stroke-linejoin:round}
+.t-roof{fill:#b0563c;stroke:#5b4a2e;stroke-width:.9;stroke-linejoin:round}
+/* landmarks */
+.t-marsh{fill:none;stroke:#5f8a6a;stroke-width:1;stroke-linecap:round;opacity:.85}
+.t-cactus{fill:none;stroke:#6f8f4a;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.t-palm{fill:none;stroke:#3d6a35;stroke-width:1.4;stroke-linecap:round}
+.t-toxic{fill:#93a85a;stroke:#565b3a;stroke-width:1.2}
+.t-ruin{fill:none;stroke:#4a4a3a;stroke-width:1.5;stroke-linecap:round}
+.t-mine{fill:#3a342c;stroke:#f1e9d2;stroke-width:1}
+.t-volcano{fill:#6e6558;stroke:#3a342c;stroke-width:1.3;stroke-linejoin:round}
+.t-lava{fill:#c8452c}
+.t-smoke{fill:#8d8a84;opacity:.6}
+.t-tower{fill:#e9e2cf;stroke:#3d3a30;stroke-width:.9;stroke-linejoin:round}
+/* names of the landscape */
 .t-name{font:italic 600 13px var(--serif);fill:#5b4a2e;letter-spacing:.06em;paint-order:stroke;stroke:rgba(255,253,244,.8);stroke-width:3px;stroke-linejoin:round}
 .t-name.water{fill:#2f5d80}
 .t-name.wood{fill:#3d6a35}
+.t-name.land{font-size:15px;letter-spacing:.34em;fill:#6b6a45;opacity:.85;font-style:normal;font-variant:small-caps}
 
 /* ---------- data views: population, wealth, military (js/map/views.js) ----------
    One flat-coloured layer over the nation colours; hidden in the political view. */
@@ -94,34 +181,6 @@ svg.terrain .border-under{opacity:.7}
 svg.dataview-on .dataview{display:inline}
 .dataview path{stroke-width:1.2}
 svg.dataview-on:not(.editing) .border{stroke-width:2}
-/* richer terrain: grass, river banks, roads, farmland, pines, snow */
-.t-tuft{fill:none;stroke:#8ea767;stroke-width:1;stroke-linecap:round;opacity:.7}
-.t-bank{fill:none;stroke:#b3d68c;stroke-width:30;stroke-linecap:round;stroke-linejoin:round;opacity:.42}
-.t-road-u{fill:none;stroke:#fbf4dc;stroke-width:3.2;stroke-linecap:round;opacity:.75}
-.t-road{fill:none;stroke:#8a6a44;stroke-width:1.5;stroke-linecap:round;stroke-dasharray:6 4}
-.t-field{fill:#e2d68a;stroke:#a8985a;stroke-width:.8;stroke-linejoin:round}
-.t-furrow{fill:none;stroke:#b3a25c;stroke-width:.7}
-.t-pine{fill:#5f8f57;stroke:#3a6534;stroke-width:.8;stroke-linejoin:round}
-.t-mt-face{fill:#efe7cf}
-.t-snow{fill:#fff;stroke:#d9d6cc;stroke-width:.5;stroke-linejoin:round}
-/* terrain details: villages, marsh, oasis, the Blight's pools and ruins; softer fields */
-.t-field{fill:#ddd596;stroke:#a89c62;stroke-width:.7;opacity:.9}
-.t-house{fill:#f6efdc;stroke:#5b4a2e;stroke-width:.9;stroke-linejoin:round}
-.t-roof{fill:#b0563c;stroke:#5b4a2e;stroke-width:.9;stroke-linejoin:round}
-.t-marsh{fill:none;stroke:#5f8a6a;stroke-width:1;stroke-linecap:round;opacity:.85}
-.t-cactus{fill:none;stroke:#6f8f4a;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.t-palm{fill:none;stroke:#3d6a35;stroke-width:1.4;stroke-linecap:round}
-.t-toxic{fill:#93a85a;stroke:#565b3a;stroke-width:1.2}
-.t-ruin{fill:none;stroke:#4a4a3a;stroke-width:1.5;stroke-linecap:round}
-.t-mt-line{stroke-width:1.1}
-/* terrain round 3: bridges, mines, the volcano, watchtowers, wide land names */
-.t-bridge{fill:#f6efdc;stroke:#5b4a2e;stroke-width:1.1;stroke-linejoin:round}
-.t-mine{fill:#3a342c;stroke:#f1e9d2;stroke-width:1}
-.t-volcano{fill:#6e6558;stroke:#3a342c;stroke-width:1.3;stroke-linejoin:round}
-.t-lava{fill:#c8452c}
-.t-smoke{fill:#8d8a84;opacity:.6}
-.t-tower{fill:#e9e2cf;stroke:#3d3a30;stroke-width:.9;stroke-linejoin:round}
-.t-name.land{font-size:15px;letter-spacing:.34em;fill:#6b6a45;opacity:.85;font-style:normal;font-variant:small-caps}
 /* names given to capital cities */
 .capname{font:italic 600 12.5px var(--serif);fill:#262b36;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:rgba(255,255,255,.82);stroke-width:3px;stroke-linejoin:round}
 .hide-marks .capname{display:none}

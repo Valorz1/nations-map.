@@ -49,7 +49,7 @@ export const movements = id => R.filter(x => x.in === id);
 export const host = r => (r.of ? byId[r.of] : r.in ? byId[r.in] : null);
 export function kindLabel(r) {
   if (r.kind) return "Resistance movement";
-  if (r.of) return "Territory";
+  if (r.of) return "Part of " + (byId[r.of]?.name || "a nation");
   if (r.tag) return r.tag;
   if (!r.stats) return "Region";
   return "Nation";
@@ -59,6 +59,16 @@ export function kindLabel(r) {
 export const caps = r => r.marks.filter(m => !m[5]);
 /* a capital's own name, if one has been given (stored with the nation's government details) */
 export const capName = (r, i) => GOV[r.id]?.capNames?.[i] || "";
+/* how developed a capital is, from its infrastructure level (the number in its circle). A low number
+   means a city that has been wrecked or never built up; the size of the circle shows its population. */
+export const CITY_TIERS = [
+  { k: "ruin", label: "Ruined", min: 1, max: 2, desc: "Destroyed or almost no infrastructure left" },
+  { k: "basic", label: "Basic", min: 3, max: 4, desc: "Basic infrastructure" },
+  { k: "dev", label: "Developed", min: 5, max: 6, desc: "Developed, with a few high-rises" },
+  { k: "adv", label: "Advanced", min: 7, max: 8, desc: "Advanced, with a skyline" },
+  { k: "metro", label: "Metropolis", min: 9, max: 99, desc: "Fully developed: skyscrapers, an airport and railways" },
+].map((t, i) => ({ ...t, tier: i + 1 }));
+export const cityTier = lvl => CITY_TIERS.find(t => lvl <= t.max) || CITY_TIERS[CITY_TIERS.length - 1];
 export const infra = r => caps(r).reduce((a, m) => a + m[0], 0);
 export const topLevel = r => caps(r).reduce((a, m) => Math.max(a, m[0]), 0);
 export function allCapitals() {

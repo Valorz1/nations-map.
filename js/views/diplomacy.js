@@ -8,6 +8,7 @@ import { icon } from "../ui/icons.js";
 import { confirmDialog, toast } from "../ui/feedback.js";
 import { href, refresh } from "../ui/router.js";
 import { mount, listMode } from "./common.js";
+import { postNews, yearLabel } from "./news.js";
 
 let relType = "war", editIdx = null, pre = { a: null, b: null };
 
@@ -32,7 +33,8 @@ function render(args, opts) {
       <div class="seg" role="group" aria-label="Type"><button type="button" data-rt="war" aria-pressed="${relType === "war"}">${icon("swords")}War</button><button type="button" data-rt="ally" aria-pressed="${relType === "ally"}">${icon("link")}Alliance</button></div>
       <div class="relpick"><select id="ra" class="select" aria-label="First nation">${options(a0)}</select><span class="rp-verb">${relType === "war" ? "at war with" : "allied with"}</span><select id="rb" class="select" aria-label="Second nation">${options(b0)}</select></div>
       <div class="field-row"><label class="field"><span>Name <em class="opt">optional</em></span><input class="input" id="rn" type="text" placeholder="${relType === "war" ? "e.g. The Great Northern War" : "e.g. The Southern Pact"}"></label>
-        <label class="field"><span>Since <em class="opt">optional</em></span><input class="input" id="rs" type="text" placeholder="e.g. Year 412"></label></div>
+        <label class="field"><span>Since <em class="opt">optional</em></span><input class="input" id="rs" type="text" placeholder="${esc(yearLabel())} if left empty"></label></div>
+      <label class="check"><input type="checkbox" id="rnews" checked> Report it in the news</label>
       <div class="form-acts"><button type="submit" class="btn btn-primary">${relType === "war" ? `${icon("swords")}Declare war` : `${icon("link")}Form alliance`}</button></div></form>`
     : `<div class="callout">${icon("history")}<span>You're viewing “${esc(past.name)}”. Slide the timeline to <b>Now</b> to add, edit or remove wars and alliances.</span></div>`;
 
@@ -142,7 +144,8 @@ export const diplomacyView = {
     }
     if (e.target.closest('[data-act="edit-cancel"]')) { editIdx = null; refresh(); return true; }
     const en = e.target.closest("[data-end-rel]");
-    if (en) { const x = REL[+en.dataset.endRel]; x.status = "ended"; editIdx = +en.dataset.endRel; save(x.t === "war" ? "war" : "alliance"); toast(x.t === "war" ? "War marked as ended" : "Alliance dissolved", { kind: "info", sub: "Add an outcome and date if you like" }); return true; }
+    if (en) { const x = REL[+en.dataset.endRel]; x.status = "ended"; if (!x.ended) x.ended = yearLabel(); editIdx = +en.dataset.endRel;
+      postNews({ by: x.a, k: x.t === "war" ? "war" : "treaty", h: x.t === "war" ? `${relTitle(x)} comes to an end` : `${relTitle(x)} is dissolved`, about: [x.a, x.b], auto: true }); save(x.t === "war" ? "war" : "alliance"); toast(x.t === "war" ? "War marked as ended" : "Alliance dissolved", { kind: "info", sub: "Add an outcome and date if you like" }); return true; }
     const dr = e.target.closest("[data-delrel]");
     if (dr) {
       const i = +dr.dataset.delrel, x = REL[i];
@@ -160,8 +163,13 @@ export const diplomacyView = {
       const i = REL.findIndex(x => relActive(x) && pairKey(x) === [a, b].sort().join("|"));
       if (i >= 0 && REL[i].t === relType) { toast("That's already on the list", { kind: "info", sub: relTitle(REL[i]) }); return true; }
       const extra = {}; const nm = document.getElementById("rn").value.trim(), st = document.getElementById("rs").value.trim();
-      if (nm) extra.name = nm; if (st) extra.started = st;
+      if (nm) extra.name = nm; extra.started = st || yearLabel();
       if (i >= 0) Object.assign(REL[i], { t: relType }, extra); else REL.push({ a, b, t: relType, ...extra });
+      if (document.getElementById("rnews")?.checked) {
+        const A = byId[a].name, B = byId[b].name;
+        postNews({ by: a, k: relType === "war" ? "war" : "treaty", about: [a, b], auto: true,
+          h: relType === "war" ? `${A} declares war on ${B}${nm ? `: ${nm} begins` : ""}` : `${A} and ${B} sign an alliance${nm ? `: ${nm}` : ""}` });
+      }
       save(relType === "war" ? "war declaration" : "alliance");
       return true;
     }

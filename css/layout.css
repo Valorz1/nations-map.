@@ -43,8 +43,8 @@
 .app-head .nav-toggle{display:none}
 .data-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 2px var(--bg-1)}
 
-@media (max-width:1380px){ .brand-text small{display:none} .search-trigger{min-width:0} .search-trigger .st-label{display:none} .search-trigger kbd{display:none} .search-trigger{width:38px;padding:0;justify-content:center} }
-@media (max-width:1180px){ .nav-item{padding:0 9px} .nav-item::after{left:9px;right:9px} .nav-item .i{display:none} }
+@media (max-width:1480px){ .brand-text small{display:none} .search-trigger{min-width:0} .search-trigger .st-label{display:none} .search-trigger kbd{display:none} .search-trigger{width:38px;padding:0;justify-content:center} }
+@media (max-width:1260px){ .nav-item{padding:0 9px} .nav-item::after{left:9px;right:9px} .nav-item .i{display:none} }
 @media (max-width:1020px){
   .main-nav{display:none}
   .app-head .nav-toggle{display:inline-grid}

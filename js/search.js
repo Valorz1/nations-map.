@@ -1,7 +1,7 @@
 /* One searchable index of everything in the world — shared by the global
    search palette and the Encyclopedia, so both always agree. */
-import { capName, R, byId, kindLabel, isTerritory, isMovement, govTypes, relTitle, relActive, allCapitals, caps } from "./model.js";
-import { CHARS, GOV, TL } from "./store.js";
+import { capName, cityTier, R, byId, kindLabel, isTerritory, isMovement, govTypes, relTitle, relActive, allCapitals, caps } from "./model.js";
+import { CHARS, GOV, TL, NEWS } from "./store.js";
 import { curRel } from "./map/engine.js";
 import { emblem } from "./ui/dom.js";
 import { portrait } from "./ui/portrait.js";
@@ -19,6 +19,7 @@ export const CATS = [
   { k: "alliances", label: "Alliances", ico: "link" },
   { k: "capitals", label: "Capitals", ico: "castle" },
   { k: "events", label: "Historical events", ico: "history" },
+  { k: "news", label: "News", ico: "news" },
 ];
 
 export function buildIndex() {
@@ -26,9 +27,9 @@ export function buildIndex() {
   for (const r of R) {
     const g = GOV[r.id] || {};
     const cat = isTerritory(r) ? "territories" : (isMovement(r) || !r.stats) ? "movements" : "nations";
-    const sub = r.of ? `Territory of ${byId[r.of].name}` : r.kind ? `Resistance movement in ${byId[r.in].name}` : [g.gov, g.leader && "ruled by " + g.leader, r.tag].filter(Boolean).join(" · ") || kindLabel(r);
+    const sub = r.of ? `Part of ${byId[r.of].name}` : r.kind ? `Resistance movement in ${byId[r.in].name}` : [g.gov, g.leader && "ruled by " + g.leader, r.tag].filter(Boolean).join(" · ") || kindLabel(r);
     out.push({ cat, type: kindLabel(r), title: r.name, sub, href: href("nation", r.id), art: emblem(r, 26),
-      keys: [r.asWritten, g.gov, g.leader, ...(r.lore || []), ...(r.sketch || [])].filter(Boolean).join(" "), r });
+      keys: [r.asWritten, g.gov, g.leader, g.motto, g.currency, g.language, g.religion, g.demonym, ...(r.lore || []), ...(r.sketch || [])].filter(Boolean).join(" "), r });
   }
   for (const c of CHARS) {
     const n = byId[c.nation];
@@ -49,11 +50,12 @@ export function buildIndex() {
   for (const c of allCapitals()) {
     const n = caps(c.r).length, own = capName(c.r, c.r.marks.indexOf(c.m));
     out.push({ cat: "capitals", type: "Capital", title: own ? `${own} — capital of ${c.r.name}` : `${c.r.name} — ${n > 1 ? "capital " + (c.i + 1) : "capital"}`,
-      sub: `Infrastructure level ${c.level} · ${c.small ? "smaller" : "larger"} population${c.disputed ? " · disputed" : ""}${c.note ? " · " + c.note : ""}`,
-      href: href("nation", c.r.id), art: `<span class="circ${c.small ? " sm" : ""}${c.disputed ? " x2" : ""}">${c.level}</span>`, keys: "capital city", cap: [c.x, c.y], r: c.r });
+      sub: `${cityTier(c.level).label} · infrastructure level ${c.level} · ${c.small ? "smaller" : "larger"} population${c.disputed ? " · disputed" : ""}${c.note ? " · " + c.note : ""}`,
+      href: href("nation", c.r.id), art: `<span class="circ${c.small ? " sm" : ""}${c.disputed ? " x2" : ""}">${c.level}</span>`, keys: "capital city town " + cityTier(c.level).label, cap: [c.x, c.y], r: c.r });
   }
   TL.forEach((m, i) => out.push({ cat: "events", type: "Saved moment", title: m.name, sub: [m.date, m.description].filter(Boolean).join(" · ") || `Moment ${i + 1} on the timeline`, href: href("history"), art: icon("history"), keys: "", order: i }));
   curRel.forEach(x => { if (x.started && byId[x.a] && byId[x.b]) out.push({ cat: "events", type: x.t === "war" ? "War begins" : "Alliance formed", title: relTitle(x), sub: `${x.started}${x.ended ? " – " + x.ended : ""}`, href: href("diplomacy"), art: icon(x.t === "war" ? "swords" : "link"), keys: "", order: 1000 }); });
+  for (const n of NEWS) out.push({ cat: "news", type: "News · Year " + n.y, title: n.h, sub: [byId[n.by]?.name || "World desk", n.b && String(n.b).slice(0, 90)].filter(Boolean).join(" · "), href: href("news", n.by || ""), art: icon("news"), keys: n.b || "" });
   for (const r of R) { const f = GOV[r.id]?.founded; if (f) out.push({ cat: "events", type: "Founding", title: `${r.name} founded`, sub: f, href: href("nation", r.id, "government"), art: emblem(r, 26), keys: "", order: 2000 }); }
   return out;
 }

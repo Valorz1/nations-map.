@@ -25,6 +25,8 @@ import { charactersView, characterView } from "./views/characters.js";
 import { diplomacyView } from "./views/diplomacy.js";
 import { historyView } from "./views/history.js";
 import { encyclopediaView } from "./views/encyclopedia.js";
+import { newsView, yearLabel } from "./views/news.js";
+import { CAL, persist } from "./store.js";
 import { legendHTML, terrainLegendHTML } from "./views/legend.js";
 
 const VIEWS = {
@@ -32,7 +34,7 @@ const VIEWS = {
   nations: nationsView, nation: dossierView,
   rankings: rankingsView, compare: compareView,
   characters: charactersView, character: characterView,
-  diplomacy: diplomacyView, history: historyView, encyclopedia: encyclopediaView, war: warView,
+  diplomacy: diplomacyView, history: historyView, encyclopedia: encyclopediaView, war: warView, news: newsView,
 };
 let active = VIEWS.overview;
 
@@ -162,6 +164,8 @@ function initShell() {
     { title: "Show the whole map", sub: "Zoom out to fit", ico: "maximize", run: () => document.getElementById("zFit").click() },
     { title: "Map layers", sub: "Ratings, capitals, notes, wars, grid", ico: "layers", run: () => togglePop("layers", true) },
     { title: "Map key", sub: "What the symbols mean", ico: "legend", run: () => togglePop("mapKey", true) },
+    { title: "Publish a news story", sub: "Declarations, treaties, events", ico: "news", run: () => go("news") },
+    { title: "Advance the year", sub: "Move the in-world calendar on by one year", ico: "calendar", run: () => { CAL.year++; persist("calendar", { quiet: true }); refresh(); toast(`${yearLabel()} begins`, { kind: "info" }); } },
     { title: "Compare two nations", sub: "Side by side", ico: "scale", run: () => go("rankings/compare") },
     { title: "War simulator", sub: "Who would win? A what-if that changes nothing", ico: "swords", run: () => go("war") },
     { title: "Population & GDP table", sub: "Estimated from the map", ico: "users", run: () => go("rankings/people") },
@@ -262,7 +266,7 @@ function closeDrawer(restore = true) {
   d.hidden = true; const t = document.getElementById("navToggle"); t.setAttribute("aria-expanded", "false"); if (restore) t.focus();
 }
 function shortcuts() {
-  const rows = [["/", "Search everything"], ["Ctrl K", "Search everything"], ["1 – 7", "Go to a section"], ["T", "Open or close the timeline"], ["L", "Map layers"], ["Esc", "Close menus and dialogs"], ["Enter", "Open the focused nation on the map"], ["?", "Show this list"]];
+  const rows = [["/", "Search everything"], ["Ctrl K", "Search everything"], ["1 – 8", "Go to a section"], ["T", "Open or close the timeline"], ["L", "Map layers"], ["Esc", "Close menus and dialogs"], ["Enter", "Open the focused nation on the map"], ["?", "Show this list"]];
   infoDialog("Keyboard shortcuts", `<div class="kbd-list">${rows.map(([k, d]) => `<span>${k.split(" ").map(x => `<kbd>${x}</kbd>`).join("")}</span><span>${d}</span>`).join("")}</div>`, "keyboard");
 }
 

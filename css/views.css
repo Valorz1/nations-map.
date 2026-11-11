@@ -474,3 +474,65 @@ aside#panel[data-size="wide"] .dossier-h .tab .i{display:block}
 .wf-v{font:600 12px var(--mono);white-space:nowrap;padding:3px 8px;border-radius:var(--r-pill);background:rgba(139,124,240,.14);color:#b9aefc}
 .wf-v.a{background:var(--war-soft);color:var(--war)}
 @media (max-width:560px){.war-sides{grid-template-columns:1fr}}
+
+/* ---------- News: the World Herald and the in-world calendar (js/views/news.js) ---------- */
+.cal{display:grid;grid-template-columns:1fr auto;gap:12px 16px;align-items:center;padding:16px;margin-bottom:16px}
+.cal-now small{display:block;font:600 11px var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.cal-now b{font:600 26px var(--display);letter-spacing:.04em;color:var(--gold-hi)}
+.cal-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.cal-era{display:flex;align-items:center;gap:10px;grid-column:1/-1}
+.cal-era span{font:600 11px var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.cal-era .input{max-width:220px}
+.cal .hint{grid-column:1/-1}
+@media (max-width:520px){.cal{grid-template-columns:1fr}.cal-acts{justify-content:flex-start}}
+.news-form{margin-bottom:18px}
+.form-sub{display:flex;align-items:center;gap:7px;margin-top:4px;padding-top:12px;border-top:1px solid var(--line-2);font:600 11px var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--gold-hi)}
+.news-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+.news-filters .select{width:auto;min-width:180px;flex:1}
+.news-year{display:flex;align-items:center;gap:10px;margin:18px 0 10px;font:600 12px var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+.news-year::after{content:"";flex:1;height:1px;background:var(--line-2)}
+.stories{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.story{--k:var(--gold);position:relative;padding:13px 15px 12px 18px;border:1px solid var(--line-2);border-radius:var(--r-lg);background:linear-gradient(180deg,var(--bg-3),#111825);overflow:hidden}
+.story::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--k)}
+.story.editing{padding:0;border:0;background:none}.story.editing::before{display:none}
+.story.k-war{--k:var(--war)}.story.k-treaty{--k:var(--ally)}.story.k-politics{--k:#b48ae8}.story.k-economy{--k:var(--ok)}.story.k-event{--k:#e08a4f}.story.k-declaration{--k:#d9c27a}
+.st-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:600 11px var(--ui);letter-spacing:.1em;text-transform:uppercase}
+.st-kind{display:inline-flex;align-items:center;gap:5px;color:var(--k)}
+.st-year{color:var(--text-4)}
+.st-auto{padding:1px 6px;border:1px solid var(--line-3);border-radius:var(--r-pill);color:var(--text-4);font-size:9.5px}
+.st-h{margin:6px 0 0;font:600 18px/1.3 var(--serif);color:var(--text-1);text-wrap:balance}
+.story.compact .st-h{font-size:16px}
+.st-b{margin-top:6px;font:400 14.5px/1.55 var(--serif);color:var(--text-2)}
+.st-b p{margin:0 0 6px}
+.st-foot{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px}
+.st-foot .spacer{flex:1}
+.st-by,.st-also{display:inline-flex;align-items:center;gap:6px;font:500 12.5px var(--ui);color:var(--text-2);text-decoration:none}
+.st-by:hover,.st-also:hover{color:var(--gold-hi)}
+.st-also{color:var(--text-3)}.st-also::before{content:"with";margin-right:2px;color:var(--text-4)}
+.st-by.world{color:var(--text-3)}
+/* the national factbook */
+.motto{margin:0 0 12px;padding:12px 16px;border-left:3px solid var(--gold);background:var(--gold-soft);border-radius:0 var(--r-md) var(--r-md) 0;font:italic 500 17px/1.4 var(--serif);color:var(--gold-hi)}
+/* city sizes in the map key */
+.tiers{margin-top:12px;padding:12px 10px 10px;border:1px solid var(--line-2);border-radius:var(--r-md);background:#f3efe2}
+.tiers-t{margin:0 0 6px 4px;font:600 11px var(--ui);letter-spacing:.12em;text-transform:uppercase;color:#5b4a2e}
+.tiers ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;text-align:center}
+.tiers li{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0}
+.tiers b{font:600 11.5px/1.2 var(--ui);color:#262b36}
+.tiers small{font:500 10.5px var(--ui);color:#6b6455}
+.tiers .mk circle.mk-c{fill:#fff;stroke:#2c3240;stroke-width:1.6}
+.tiers .mk.mk-ruin circle.mk-c{fill:#e6e2d8;stroke:#5e5a52;stroke-width:1.5;stroke-dasharray:6 2.4}
+.tiers .mk text{fill:#1f2430}
+
+/* the parts of a nation, in its dossier */
+.parts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.part{padding:11px 13px;border:1px solid var(--line-2);border-radius:var(--r-lg);background:var(--bg-3);display:flex;flex-direction:column;gap:6px}
+.part.focused{border-color:var(--gold-line);box-shadow:0 0 0 3px var(--gold-soft-2)}
+.pt-h{display:flex;align-items:center;gap:8px}
+.pt-h b{font:600 15px var(--display);letter-spacing:.03em}
+.pt-h .muted{font-size:12.5px;color:var(--text-3)}
+.pt-h .spacer{flex:1}
+.pt-f{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--text-2)}
+.pt-f b{color:var(--text-1)}
+.pt-f .circ{display:inline-grid;place-items:center;width:20px;height:20px;margin-right:3px;border-radius:50%;background:#fff;color:#1f2430;font:600 11px var(--mono);font-style:normal;border:1.5px solid #2c3240}
+.pt-f .circ.sm{width:16px;height:16px;font-size:9.5px}
+.pt-n{font-size:12px;color:var(--text-3)}

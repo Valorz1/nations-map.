@@ -10,6 +10,7 @@ import { mount, listMode } from "./common.js";
 import { legendHTML } from "./legend.js";
 import { SECTIONS } from "./sections.js";
 import { worldTotals, estimate, short, money, whole } from "../estimates.js";
+import { sortedNews, storyHTML, yearLabel } from "./news.js";
 
 /* the record holders, from the estimated figures (nations only, territories counted with their owner) */
 function records() {
@@ -46,17 +47,23 @@ export function overview(args, opts) {
   const top3 = rated.slice(0, 3);
   const world = worldTotals();
   tiles.splice(2, 0, ["users", short(world.pop), "People (estimated)", href("rankings", "people")], ["trend", money(world.gdp), "World economy (est.)", href("rankings", "people")]);
+  const news = sortedNews().slice(0, 3);
   const showIntro = getPref("introDismissed", false) !== true;
 
   const html = viewHead({
     eyebrow: "Atlas overview", ico: "globe", title: "The Known World",
-    sub: `<span>An invented world of ${plural(nations, "nation")}, traced from a hand-drawn pencil map.</span>`,
+    sub: `<a class="pill gold" href="${href("news")}">${icon("calendar")}${esc(yearLabel())}</a><span>An invented world of ${plural(nations, "nation")}, traced from a hand-drawn pencil map.</span>`,
   }) + `<div class="vb">
     ${past ? `<div class="callout">${icon("history")}<span>You're viewing the past: <b>${esc(past.name)}</b>${past.date ? ` (${esc(past.date)})` : ""}. Figures below are from that moment.</span></div>` : ""}
     <div class="btn-row quick"><a class="btn btn-sm" href="#/war">${icon("swords")}War simulator</a><a class="btn btn-sm" href="${href("rankings", "compare")}">${icon("scale")}Compare nations</a><a class="btn btn-sm" href="${href("rankings", "people")}">${icon("users")}People &amp; GDP</a></div>
 
     <section class="sec">${secHead("At a glance")}
       <div class="tiles">${tiles.map(([ic, v, k, h]) => `<a class="tile" href="${h}"><span class="ti">${icon(ic, "i-sm")}</span><span class="tv">${v}</span><span class="tk">${k}</span></a>`).join("")}</div>
+    </section>
+
+    <section class="sec">${secHead("Latest headlines", "", `<a class="btn btn-xs btn-ghost" href="${href("news")}">The World Herald${icon("arrow-right")}</a>`)}
+      ${news.length ? `<ul class="stories">${news.map(n => storyHTML(n, { compact: true })).join("")}</ul>`
+        : emptyState("No news yet. Nations can publish declarations, treaties and events in the World Herald.", { action: `<a class="btn btn-sm" href="${href("news")}">${icon("megaphone")}Publish the first story</a>` })}
     </section>
 
     <section class="sec">${secHead("Great powers", "", `<a class="btn btn-xs btn-ghost" href="${href("rankings")}">All rankings${icon("arrow-right")}</a>`)}
