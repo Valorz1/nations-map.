@@ -20,6 +20,10 @@
      resources   grain, timber, ore, fish, spices, oil: from the land inside
                  the border, shown as a share of the whole world's supply
 
+     world size  the raw figures above are then scaled so the whole world always
+                 holds 8 billion people and a GDP of $50 trillion. Borders and
+                 ratings decide each nation's share of that, not the total.
+
    A nation's figures include its territories. Territories use their owner's
    ratings. Resistance movements and the Unknown Lands have no figures.
    ========================================================================== */
@@ -44,10 +48,10 @@ export const RESOURCES = [
 /* ---- which moment are we measuring? ----
    live(): the map as it is shown right now (this follows the timeline slider).
    momentCtx(t): a saved timeline moment, or the present when t is null. */
-const live = () => ({ arcs: GEO.arcs, stat: r => r.stats, rel: curRel });
+const live = () => ({ key: "live", arcs: GEO.arcs, stat: r => r.stats, rel: curRel });
 export function momentCtx(t) {
   const borders = t ? t.borders || {} : BORDERS, edits = t ? t.edits || {} : EDITS;
-  return { arcs: ORIG_ARCS.map((a, i) => borders[i] || a), rel: t ? t.rel || [] : REL,
+  return { key: t || "now", arcs: ORIG_ARCS.map((a, i) => borders[i] || a), rel: t ? t.rel || [] : REL,
     stat: r => { const e = edits[r.id]; return e ? Object.assign({}, r.base || {}, e) : r.base; } };
 }
 
@@ -77,8 +81,29 @@ let ROUTES = null;
 const routes = () => ROUTES || (ROUTES = tradeRoutes());
 const atWar = (rel, a, b) => rel.some(x => x.t === "war" && x.status !== "ended" && ((x.a === a && x.b === b) || (x.a === b && x.b === a)));
 
+/* ---- the size of the whole world ---- */
+export const WORLD = { pop: 8e9, gdp: 50e12 };
+/* how much to scale the raw figures by so the world adds up to WORLD. Worked out once
+   per moment and remembered until the current task ends (by then a border or rating may have changed). */
+const scales = new Map();
+function scaleFor(ctx) {
+  if (scales.has(ctx.key)) return scales.get(ctx.key);
+  let pop = 0, gdp = 0;
+  for (const r of R) { if (r.of) continue; const x = raw(r, ctx); if (x) { pop += x.pop; gdp += x.gdp || 0; } }
+  const k = { pop: pop ? WORLD.pop / pop : 1, gdp: gdp ? WORLD.gdp / gdp : 1 };
+  if (!scales.size) setTimeout(() => scales.clear());
+  scales.set(ctx.key, k);
+  return k;
+}
+
 /* figures for one place; a nation's totals include its territories */
 export function estimate(r, ctx = live()) {
+  const x = raw(r, ctx); if (!x) return null;
+  const k = scaleFor(ctx), pop = x.pop * k.pop, gdp = x.gdp == null ? null : x.gdp * k.gdp;
+  return { ...x, pop, urban: x.urban * k.pop, density: x.km2 ? pop / x.km2 : 0, gdp, perHead: gdp == null || !pop ? null : gdp / pop,
+    troops: x.troops == null ? null : x.troops * k.pop, tradeValue: x.tradeValue * k.gdp };
+}
+function raw(r, ctx) {
   if (!r || r.kind || !GEO.geoms[r.id] || r.id === "unknown") return null;
   const parts = [r, ...terr(r.id)].map(x => own(x, ctx));
   const sum = k => parts.reduce((s, p) => s + (p[k] || 0), 0);

@@ -1,11 +1,11 @@
 /* NATION DOSSIER — everything known about one nation, territory or movement. */
-import { R, byId, MAX, METRICS, rankOf, avgOf, caps, infra, topLevel, terr, movements, neighbours, kindLabel, isRated,
+import { R, byId, MAX, METRICS, rankOf, avgOf, caps, terr, movements, neighbours, kindLabel, isRated,
   relationsOf, otherSide, relTitle, leaderChar, charsOf, statHistory, calcMax, isTop } from "../model.js";
 import { EDITS, LORE, GOV, TL, persist, getPref, setPref } from "../store.js";
 import { estimate, resourceTable, resourcesOf, tradeDeals, estimateHistory, DENSITY, short, money, whole, pct } from "../estimates.js";
 import { LAND_TYPES } from "../map/geography.js";
 import { openCard } from "../ui/card.js";
-import { capName } from "../model.js";
+import { capName, cityTier } from "../model.js";
 import { drawCapNames } from "../map/engine.js";
 import { highlight, flyToRegion, flyToPoint, drawTags, curRel } from "../map/engine.js";
 import { tlPast, viewedMoment } from "../map/timeline.js";
@@ -17,6 +17,9 @@ import { confirmDialog } from "../ui/feedback.js";
 import { href, refresh } from "../ui/router.js";
 import { mount, nationSheet } from "./common.js";
 import { charCard } from "./characters.js";
+import { newsAbout, storyHTML } from "./news.js";
+/* the national factbook: [key, label, example] */
+const FACTS = [["motto","Motto","e.g. Strength through the rivers"],["anthem","Anthem","e.g. Song of the Five Waters"],["currency","Currency","e.g. Elarion crown"],["language","Language","e.g. Elarian"],["religion","Religion","e.g. The Old Faith"],["demonym","People are called","e.g. Elarians"],["animal","National animal","e.g. The river otter"]];
 import { setSheet, mq, sheet } from "../ui/panel.js";
 
 /* the land of each nation, matching what the Terrain view draws */
@@ -38,7 +41,7 @@ const LAND = {
   librebels: ["Woodland", "A small wooded pocket in the south, just below the Long River."],
 };
 
-let current = null, editing = null, govEditing = null, loreEditing = null, capEditing = null;
+let current = null, editing = null, govEditing = null, loreEditing = null, capEditing = null, focusPart = null;
 
 /* what the land is made of, counted from the terrain inside the border */
 function landSection(r, est) {
@@ -69,8 +72,18 @@ const relCount = r => { const x = relationsOf(r.id, curRel); return x.wars.lengt
 const chip = (r, cls = "") => `<a class="chip ${cls}" href="${href("nation", r.id)}">${dot(r, !!r.kind)}<span>${esc(r.name)}</span></a>`;
 
 function render(args, opts) {
-  const id = args[0], r = byId[id];
+  let id = args[0], r = byId[id];
   if (!r) { location.hash = "#/nations"; return; }
+  // a part of a nation (RUC, Shero U., F.U.C. …) is shown inside its nation's dossier
+  if (r.of && !r.kind) {
+    focusPart = r.id; id = r.of; r = byId[id]; args = [id]; tab = "overview";
+    history.replaceState(null, "", href("nation", id));
+    highlight(id); if (!opts.same) { nationSheet(opts); if (opts.fly) flyToRegion(focusPart); }
+    current = id; mount(head(r) + `<div class="vb" id="tp-${tab}" role="tabpanel" aria-labelledby="tab-${tab}">${body(r)}</div>`, opts, { size: "std" });
+    requestAnimationFrame(() => document.getElementById("part-" + focusPart)?.scrollIntoView({ block: "center" }));
+    return;
+  }
+  if (!opts.same) focusPart = null;
   if (current !== id) { editing = null; govEditing = null; loreEditing = null; capEditing = null; }
   current = id;
   highlight(id);
@@ -116,7 +129,8 @@ function statCard(r, m) {
     ${bullet(v, { max: MAX[m.k], avg, color: m.color, label: m.long })}</div>`;
 }
 function tabOverview(r) {
-  const s = r.stats || {}, cs = caps(r), past = tlPast();
+  const s = r.stats || {}, past = tlPast(), parts = r.kind ? [] : terr(r.id);
+  const capList = [r, ...parts].flatMap(x => x.marks.map((m, i) => ({ x, m, i, k: x.id + ":" + i }))), cs = capList.filter(o => !o.m[5]);
   let ratings;
   if (editing === r.id) {
     ratings = `<form class="form" id="editForm"><div class="form-title">${icon("edit")}Edit ratings</div>
@@ -129,14 +143,14 @@ function tabOverview(r) {
       ${EDITS[r.id] ? `<span class="hint">Edited · the sketch had Rate ${r.orig.rate ?? "—"}, Military ${r.orig.m ?? "—"}, Economy ${r.orig.e ?? "—"}</span>` : ""}</div>`;
   } else ratings = "";
 
-  const capHTML = r.marks.length ? `<ul class="caps">${r.marks.map((m, i) => m[5]
+  const capHTML = capList.length ? `<ul class="caps">${capList.map(({ x, m, i, k }) => m[5]
       ? `<li class="cap"><span class="circ">⊘</span><span class="cap-t"><b>Destroyed / disputed city</b><small>Contested with the Teddy Resistance</small></span><button type="button" class="icon-btn icon-btn-sm" data-cap="${m[1]},${m[2]}" aria-label="Show on map" data-tip="Show on map">${icon("pin")}</button></li>`
-      : `<li class="cap"><span class="circ${m[4] ? " x2" : ""}${m[3] ? " sm" : ""}">${m[0]}</span><span class="cap-t"><b>${capEditing === i ? `<form id="capForm" class="cap-form"><input class="input" id="capName" type="text" maxlength="40" value="${esc(capName(r, i))}" placeholder="Name this city" aria-label="City name"><button type="submit" class="btn btn-sm btn-primary">Save</button></form>` : `${esc(capName(r, i)) || (cs.length > 1 ? `Capital ${cs.indexOf(m) + 1}` : "Capital")} · infrastructure ${m[0]}`}</b><small>${m[3] ? "Smaller population" : "Larger population"}${m[4] ? " · disputed" : ""}${m[6] ? " · " + esc(m[6]) : ""}</small></span>
-         <button type="button" class="icon-btn icon-btn-sm" data-act="cap-name" data-i="${i}" aria-label="Name this city" data-tip="${capName(r, i) ? "Rename this city" : "Name this city"}">${icon("edit")}</button>
+      : `<li class="cap"><span class="circ${m[4] ? " x2" : ""}${m[3] ? " sm" : ""}">${m[0]}</span><span class="cap-t"><b>${capEditing === k ? `<form id="capForm" class="cap-form"><input class="input" id="capName" type="text" maxlength="40" value="${esc(capName(x, i))}" placeholder="Name this city" aria-label="City name"><button type="submit" class="btn btn-sm btn-primary">Save</button></form>` : `${esc(capName(x, i)) || (x !== r ? `${esc(x.name)} capital` : cs.length > 1 ? `Capital ${cs.findIndex(o => o.m === m) + 1}` : "Capital")} · ${cityTier(m[0]).label}, level ${m[0]}`}</b><small>${x !== r ? `In ${esc(x.name)} · ` : ""}${m[3] ? "Smaller population" : "Larger population"}${m[4] ? " · disputed" : ""}${m[6] ? " · " + esc(m[6]) : ""}</small></span>
+         <button type="button" class="icon-btn icon-btn-sm" data-act="cap-name" data-k="${k}" aria-label="Name this city" data-tip="${capName(x, i) ? "Rename this city" : "Name this city"}">${icon("edit")}</button>
          <button type="button" class="icon-btn icon-btn-sm" data-cap="${m[1]},${m[2]}" aria-label="Show this capital on the map" data-tip="Show on map">${icon("pin")}</button></li>`).join("")}</ul>` : "";
-  const infraSummary = cs.length ? `<div class="infra"><div><b>${cs.length}</b><small>${cs.length === 1 ? "capital" : "capitals"}</small></div><div><b>${infra(r)}</b><small>total infrastructure</small></div><div><b>${topLevel(r)}</b><small>highest level</small></div><div><b>${cs.filter(m => !m[3]).length}</b><small>large population</small></div></div>` : "";
+  const infraSummary = cs.length ? `<div class="infra"><div><b>${cs.length}</b><small>${cs.length === 1 ? "capital" : "capitals"}</small></div><div><b>${cs.reduce((a, o) => a + o.m[0], 0)}</b><small>total infrastructure</small></div><div><b>${Math.max(...cs.map(o => o.m[0]))}</b><small>highest level</small></div><div><b>${cs.filter(o => !o.m[3]).length}</b><small>large population</small></div></div>` : "";
 
-  const res = movements(r.id), ts = terr(r.id), nb = r.kind ? [] : neighbours(r.id);
+  const res = movements(r.id), ts = parts, nb = r.kind ? [] : neighbours(r.id);
   const est = estimate(r);
   const people = est ? `<section class="sec">${secHead("People & economy", "estimated")}
       <div class="infra est"><div><b>${short(est.pop)}</b><small>population</small></div><div><b>${money(est.gdp)}</b><small>economy (GDP)</small></div><div><b>${est.perHead == null ? "—" : "$" + whole(est.perHead)}</b><small>income per person</small></div><div><b>${short(est.km2)}</b><small>km² of land</small></div></div>
@@ -145,11 +159,35 @@ function tabOverview(r) {
   const land = est ? landSection(r, est) + (r.of ? "" : tradeSection(r, est)) : "";
   return `${ratings ? `<section class="sec">${secHead("Power")}${ratings}</section>` : ""}${people}${land}
     ${r.kind ? "" : `<section class="sec">${secHead("Capitals & infrastructure", cs.length ? String(cs.length) : "")}
-      ${r.marks.length ? infraSummary + capHTML : emptyState("No capitals are marked for this place on the sketch.")}
+      ${capList.length ? infraSummary + capHTML : emptyState("No capitals are marked for this place on the sketch.")}
       <p class="hint">${icon("info", "i-xs")}The size of each capital's circle on the map shows whether its population is large or small.</p></section>`}
-    ${ts.length ? `<section class="sec">${secHead("Territories", String(ts.length))}<div class="chips">${ts.map(t => chip(t)).join("")}</div></section>` : ""}
+    ${r.kind ? "" : newsBox(r)}
+    ${ts.length ? partsSection(r, ts) : ""}
     ${res.length ? `<section class="sec">${secHead("Resistance movements", String(res.length))}<div class="chips">${res.map(t => chip(t)).join("")}</div></section>` : ""}
     ${nb.length ? `<section class="sec">${secHead("Shares borders with", String(nb.length))}<div class="chips">${nb.map(n => chip(byId[n])).join("")}</div></section>` : ""}`;
+}
+
+/* the separate parts of a nation (RUC, Shero U., F.U.C. …): they belong to it and are counted in its figures */
+function partsSection(r, ts) {
+  return `<section class="sec">${secHead("Parts of the nation", String(ts.length))}
+    <ul class="parts">${ts.map(t => {
+      const x = estimate(t), land = x ? LAND_TYPES.map(([k, label]) => [label, x.land[k]]).sort((a, b) => b[1] - a[1])[0][0] : "", c = caps(t);
+      const nb = neighbours(t.id).filter(n => n !== r.id).map(n => byId[n].name);
+      return `<li class="part${focusPart === t.id ? " focused" : ""}" id="part-${t.id}">
+        <div class="pt-h">${dot(t)}<b>${esc(t.name)}</b><span class="muted">part of ${esc(r.name)}</span><span class="spacer"></span><button type="button" class="icon-btn icon-btn-sm" data-part="${t.id}" aria-label="Show ${esc(t.name)} on the map" data-tip="Show on map">${icon("target")}</button></div>
+        <div class="pt-f">${x ? `<span><b>${short(x.km2)}</b> km²</span><span><b>${short(x.pop)}</b> people</span><span>mostly <b>${esc(land.toLowerCase())}</b></span>` : ""}${c.length ? `<span>${c.map(m => `<i class="circ${m[3] ? " sm" : ""}">${m[0]}</i>`).join("")} ${c.length === 1 ? "capital" : "capitals"}</span>` : ""}</div>
+        ${nb.length ? `<small class="pt-n">Borders ${esc(nb.join(", "))}</small>` : `<small class="pt-n">Cut off from the rest of the nation</small>`}
+        ${t.sketch?.length ? `<small class="pt-n">${t.sketch.map(esc).join(" ")}</small>` : ""}
+      </li>`;
+    }).join("")}</ul>
+    <p class="hint">${icon("info", "i-xs")}<span>These parts belong to ${esc(r.name)}: their people, land and capitals are counted in its figures, and tapping one on the map opens this dossier.</span></p></section>`;
+}
+
+/* the latest stories by or about this nation */
+function newsBox(r) {
+  const list = newsAbout(r.id);
+  return `<section class="sec">${secHead("In the news", list.length ? String(list.length) : "", `<a class="btn btn-xs btn-ghost" href="${href("news", r.id)}">${list.length ? "All stories" : "Publish a story"}${icon("arrow-right")}</a>`)}
+    ${list.length ? `<ul class="stories">${list.slice(0, 3).map(n => storyHTML(n, { compact: true })).join("")}</ul>` : `<p class="inline-empty">No news from ${esc(r.name)} yet.</p>`}</section>`;
 }
 
 /* ---------------- government ---------------- */
@@ -161,10 +199,13 @@ function tabGov(r) {
     <label class="field"><span>Flag colours</span><input class="input" id="g-flag" type="text" value="${esc((g.flag || []).join(", "))}" placeholder="e.g. red, white, #1d4ed8"><small>Separate colours with commas, top stripe first. The national emblem uses these colours. <span id="g-prev">${flagHTML(g.flag, true)}</span></small></label>
     <div class="field-row"><label class="field"><span>Founded</span><input class="input" id="g-founded" type="text" value="${esc(g.founded || "")}" placeholder="e.g. Year 412 after the Blight"></label>
     <label class="field"><span>Population</span><input class="input" id="g-pop" type="text" value="${esc(g.population || "")}" placeholder="e.g. about 2 million"></label></div>
+    <div class="form-sub">${icon("book", "i-xs")}National factbook</div>
+    <div class="field-row">${FACTS.map(([k, label, ph]) => `<label class="field"><span>${label}</span><input class="input" id="g-${k}" type="text" maxlength="80" value="${esc(g[k] || "")}" placeholder="${esc(ph)}"></label>`).join("")}</div>
     <datalist id="govTypes">${["Monarchy", "Democracy", "Dictatorship", "Republic", "Communist", "Conservative", "Liberalism", "Anarchy", "Authoritarianism", "Theocracy", "Military junta", "Tribal council", "Federation", "Empire"].map(x => `<option value="${x}">`).join("")}</datalist>
     <div class="form-acts"><button type="submit" class="btn btn-primary">${icon("check")}Save government</button><button type="button" class="btn" data-act="gov-cancel">Cancel</button></div></form>`;
   const row = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`, none = `<span class="ns">Not recorded</span>`;
-  const has = g.leader || g.gov || (g.flag && g.flag.length) || g.founded || g.population;
+  const has = g.leader || g.gov || (g.flag && g.flag.length) || g.founded || g.population || FACTS.some(([k]) => g[k]);
+  const facts = FACTS.filter(([k]) => g[k]);
   const ch = leaderChar(r);
   return `${!has && hostR ? `<div class="callout info">${icon("info")}<span>No separate government is recorded. It is governed by <a class="link-btn" href="${href("nation", hostR.id, "government")}">${esc(hostR.name)}</a>.</span></div>` : ""}
     <section class="sec">${secHead("Government")}
@@ -175,6 +216,10 @@ function tabGov(r) {
       ${row("Population", g.population ? esc(g.population) : none)}
       ${row("On the sketch", `<span class="serif-i">“${esc(r.asWritten)}”</span>`)}</dl>
     <div class="btn-row"><button type="button" class="btn btn-sm" data-act="gov-start">${icon("edit")}Edit government</button></div></section>
+    <section class="sec">${secHead("National factbook", facts.length ? `${facts.length} of ${FACTS.length}` : "")}
+    ${g.motto ? `<blockquote class="motto">“${esc(g.motto)}”</blockquote>` : ""}
+    ${facts.filter(([k]) => k !== "motto").length ? `<dl class="dl">${facts.filter(([k]) => k !== "motto").map(([k, label]) => row(label, esc(g[k]))).join("")}</dl>` : ""}
+    ${facts.length ? "" : `<p class="inline-empty">No motto, currency, language or anthem recorded yet. Use <b>Edit government</b> to fill in the factbook.</p>`}</section>
     ${ch ? `<section class="sec">${secHead("Head of state")}<ul class="ccs">${charCard(ch)}</ul></section>` : ""}`;
 }
 
@@ -254,7 +299,8 @@ export const dossierView = {
   click(e) {
     const t = e.target.closest("[data-tab]"); if (t) { setTab(t.dataset.tab); return true; }
     const cap = e.target.closest("[data-cap]"); if (cap) { const [x, y] = cap.dataset.cap.split(",").map(Number); flyToPoint(x, y); return true; }
-    const cn = e.target.closest("[data-act='cap-name']"); if (cn) { capEditing = capEditing === +cn.dataset.i ? null : +cn.dataset.i; rerender(); document.getElementById("capName")?.focus(); return true; }
+    const cn = e.target.closest("[data-act='cap-name']"); if (cn) { capEditing = capEditing === cn.dataset.k ? null : cn.dataset.k; rerender(); document.getElementById("capName")?.focus(); return true; }
+    const pz = e.target.closest("[data-part]"); if (pz) { flyToRegion(pz.dataset.part); return true; }
     const a = e.target.closest("[data-act]")?.dataset.act; if (!a) return;
     if (a === "zoom") { flyToRegion(current); return true; }
     if (a === "card") { openCard(byId[current], LAND[current]?.[1] || ""); return true; }
@@ -283,14 +329,15 @@ export const dossierView = {
       EDITS[current] = v; r.stats = Object.assign({ x: r.label.x, y: r.label.y + r.label.l.length * r.label.s * .55 + 34 }, r.stats || {}, v); commitRatings(); return true;
     }
     if (id === "capForm") {
-      const g = GOV[current] || (GOV[current] = {}), names = g.capNames || (g.capNames = {}), v = document.getElementById("capName").value.trim();
-      if (v) names[capEditing] = v; else delete names[capEditing];
-      if (!Object.keys(names).length) delete g.capNames; if (!Object.keys(g).length) delete GOV[current];
+      const [rid, ci] = capEditing.split(":"), g = GOV[rid] || (GOV[rid] = {}), names = g.capNames || (g.capNames = {}), v = document.getElementById("capName").value.trim();
+      if (v) names[ci] = v; else delete names[ci];
+      if (!Object.keys(names).length) delete g.capNames; if (!Object.keys(g).length) delete GOV[rid];
       capEditing = null; drawCapNames(); persist("city name"); rerender(); return true;
     }
     if (id === "govForm") {
       const v = k => document.getElementById("g-" + k).value.trim(), flag = v("flag").split(",").map(x => x.trim()).filter(Boolean).filter(okColour).slice(0, 6);
       const g = { ...(GOV[current] || {}), leader: v("leader"), gov: v("gov"), flag, founded: v("founded"), population: v("pop") };
+      for (const [k] of FACTS) g[k] = v(k);
       Object.keys(g).forEach(k => { if (!g[k] || (Array.isArray(g[k]) && !g[k].length)) delete g[k]; });
       if (Object.keys(g).length) GOV[current] = g; else delete GOV[current];
       govEditing = null; persist("government details"); rerender(); return true;

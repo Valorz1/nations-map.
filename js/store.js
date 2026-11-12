@@ -4,7 +4,8 @@
    data/geo.json      map geometry traced from the sketch (never edited here)
    data/nations.json  every nation, territory and movement as drawn on the sketch
    data/world.json    the editable world: ratings, borders, lore, governments,
-                      wars & alliances, timeline moments and characters
+                      wars & alliances, timeline moments, characters,
+                      the news feed and the in-world calendar
 
    Edits are saved to localStorage straight away. "Export world" downloads a
    world.json that can replace data/world.json to publish the changes.
@@ -16,7 +17,7 @@ const PREFS = "nationsMap.prefs.v1";
 
 /* The editable state, using the same names as the original page. Each is
    mutated in place, never reassigned, so every module shares one copy. */
-export let EDITS, BORDERS, LORE, GOV, REL, TL, CHARS;
+export let EDITS, BORDERS, LORE, GOV, REL, TL, CHARS, NEWS, CAL;
 export const DATA = { geo: null, regions: null };
 export const status = { source: "published", savedAt: null, storage: true };
 const listeners = new Set();
@@ -40,7 +41,8 @@ function readLocal() {
 
 function apply(w) {
   EDITS = obj(w.ratings); BORDERS = obj(w.borders); LORE = obj(w.lore); GOV = obj(w.governments);
-  REL = arr(w.relations); TL = arr(w.timeline); CHARS = arr(w.characters);
+  REL = arr(w.relations); TL = arr(w.timeline); CHARS = arr(w.characters); NEWS = arr(w.news);
+  CAL = Object.assign({ year: 1, era: "" }, obj(w.calendar));
 }
 const obj = v => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
 const arr = v => (Array.isArray(v) ? v : []);
@@ -54,7 +56,7 @@ export async function load() {
 }
 
 export function snapshot() {
-  return { ratings: EDITS, borders: BORDERS, lore: LORE, governments: GOV, relations: REL, timeline: TL, characters: CHARS };
+  return { ratings: EDITS, borders: BORDERS, lore: LORE, governments: GOV, relations: REL, timeline: TL, characters: CHARS, news: NEWS, calendar: CAL };
 }
 
 /* Save everything to this browser. Returns a short status line (as the
@@ -97,17 +99,17 @@ export function exportWorld() {
   toast("World exported", { sub: "Replace data/world.json with this file to publish it" });
 }
 
-const KEYS = ["ratings", "borders", "lore", "governments", "relations", "timeline", "characters"];
+const KEYS = ["ratings", "borders", "lore", "governments", "relations", "timeline", "characters", "news", "calendar"];
 export async function importWorld(file) {
   let w;
   try { w = JSON.parse(await file.text()); } catch (e) { toast("That file isn't valid JSON", { kind: "err" }); return; }
   if (!w || typeof w !== "object" || !KEYS.some(k => k in w)) { toast("That doesn't look like a world.json file", { kind: "err", sub: "Expected ratings, borders, characters…" }); return; }
   const ok = await confirmDialog({
     title: "Replace your world?", danger: true, ok: "Import and replace",
-    body: `This replaces the ratings, borders, lore, governments, wars, timeline and characters in this browser with “${file.name}”.`,
+    body: `This replaces the ratings, borders, lore, governments, wars, timeline, characters and news in this browser with “${file.name}”.`,
   });
   if (!ok) return;
-  const data = {}; KEYS.forEach(k => { data[k] = w[k] ?? (["relations", "timeline", "characters"].includes(k) ? [] : {}); });
+  const data = {}; KEYS.forEach(k => { data[k] = w[k] ?? (["relations", "timeline", "characters", "news"].includes(k) ? [] : {}); });
   try { localStorage.setItem(KEY, JSON.stringify({ v: 1, savedAt: Date.now(), data })); }
   catch (e) { toast("Couldn't import", { kind: "err", sub: "This browser is blocking storage or it is full." }); return; }
   sessionStorage.setItem("nationsMap.flash", "World imported");

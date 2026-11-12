@@ -3,7 +3,7 @@
    The drawing code is the original, unchanged: same geometry, layers, order,
    colours and interactions. Only the hooks out to the new interface are new.
    ========================================================================== */
-import { GEO, R, byId, rankOf } from "../model.js";
+import { GEO, R, byId, rankOf, cityTier } from "../model.js";
 import { BORDERS, GOV } from "../store.js";
 import { sheetPx, mq } from "../ui/panel.js";
 import { esc, emblem } from "../ui/dom.js";
@@ -189,9 +189,35 @@ function tag(s) {
   }
   const me = el("text", { class: "me", x: 0, y: hasRate ? 18 : 5, "text-anchor": "middle" }, g); me.textContent = `M ${s.m ?? "—"}   ·   E ${s.e ?? "—"}`;
 }
+/* a capital: the circle and its number, dressed up by how big a place it is
+   (town, city, large city, great city, metropolis; see cityTier in model.js):
+   rings round the circle, and a skyline of towers rising behind it for the big ones */
+export function cityMarkSVG(n, small, slash) {
+  const r = small ? 11 : 17, t = slash ? 0 : cityTier(n).tier, s = r / 17, f = v => +v.toFixed(2);
+  let o = "";
+  if (t >= 3) {
+    const H = { 3: [7, 11, 8], 4: [8, 12, 16, 11, 7], 5: [9, 14, 19, 26, 18, 13, 8] }[t], bw = 3.6 * s, gap = .9 * s, W = H.length * bw + (H.length - 1) * gap, base = -r + 4 * s;
+    H.forEach((h, i) => {
+      const x = -W / 2 + i * (bw + gap), top = base - (r * .55 + h * s);
+      o += `<path class="mk-tower${t === 5 && i === 3 ? " hi" : ""}" d="M${f(x)},${f(base)}V${f(top)}H${f(x + bw)}V${f(base)}Z"/>`;
+      if (t === 5 && i === 3) o += `<path class="mk-spire" d="M${f(x + bw / 2)},${f(top)}V${f(top - 6 * s)}"/>`;
+    });
+  }
+  if (t === 5) o += `<circle class="mk-band" r="${f(r + 4.5)}"/>`;                            // a gold band round a metropolis
+  if (t === 4) o += `<circle class="mk-wall" r="${f(r + 6)}"/>`;
+  if (t >= 2 && t < 5) o += `<circle class="mk-wall" r="${f(r + 3.2)}"/>`;
+  return o;
+}
+/* a crack across the circle of a ruined city (drawn over the circle, under the number) */
+export function cityCrackSVG(small) {
+  const k = (small ? 11 : 17) / 17, f = v => +(v * k).toFixed(2);
+  return `<path class="mk-crack" d="M${f(-15)},${f(-6)}L${f(-9)},${f(-3)}L${f(-11)},${f(3)}L${f(-6)},${f(6)}M${f(9)},${f(-13)}L${f(7)},${f(-8)}L${f(12)},${f(-4)}L${f(10)},${f(1)}M${f(4)},${f(15)}L${f(7)},${f(10)}L${f(12)},${f(9)}"/>`;
+}
 function mark(n, x, y, small, hatched, slash) {
-  const g = el("g", { class: "mk", transform: `translate(${x},${y})` }, gL); const r = small ? 11 : 17;
-  el("circle", { r }, g); if (hatched) el("circle", { r, fill: "url(#xhatch)", stroke: "#2c3240", "stroke-width": 1.6 }, g);
+  const tier = slash ? null : cityTier(n), g = el("g", { class: "mk" + (tier ? " mk-" + tier.k : ""), transform: `translate(${x},${y})` }, gL); const r = small ? 11 : 17;
+  g.innerHTML = cityMarkSVG(n, small, slash);
+  el("circle", { r, class: "mk-c" }, g); if (hatched) el("circle", { r, fill: "url(#xhatch)", stroke: "#2c3240", "stroke-width": 1.6 }, g);
+  if (tier && tier.tier === 1) g.insertAdjacentHTML("beforeend", cityCrackSVG(small));
   if (slash) { el("line", { x1: -r * .7, y1: r * .7, x2: r * .7, y2: -r * .7, stroke: "#2c3240", "stroke-width": 1.4 }, g); return; }
   const t = el("text", { style: small ? "font-size:11px" : "" }, g); t.textContent = n;
   if (hatched) { t.setAttribute("style", "paint-order:stroke;stroke:#fff;stroke-width:3px"); }
@@ -291,12 +317,15 @@ function initPointer() {
 }
 
 /* ============ SELECTION HIGHLIGHT (as in the original select()) ============ */
+/* a nation's outline includes the parts that belong to it (RUC, Shero U., F.U.C. …) */
+const partsOf = id => R.filter(x => x.of === id && !x.kind);
+const selD = id => { const r = byId[id]; return r ? r.d + (r.of || r.kind ? "" : partsOf(id).map(x => x.d).join("")) : ""; };
 export function highlight(id, { withHost = true } = {}) {
   highlighted = id || null;
   const r = id && byId[id];
-  selPath.setAttribute("d", r ? r.d : ""); svg.classList.toggle("focus", !!r);
+  selPath.setAttribute("d", selD(id)); svg.classList.toggle("focus", !!r);
   gRegions.querySelectorAll(".region").forEach(g => {
-    const on = !!r && (g.dataset.id === id || (withHost && g.dataset.id === r.in)), reg = byId[g.dataset.id], dim = !!r && !on;
+    const on = !!r && (g.dataset.id === id || (withHost && g.dataset.id === r.in) || byId[g.dataset.id]?.of === id), reg = byId[g.dataset.id], dim = !!r && !on;
     g.classList.toggle("on", on);
     if (reg && reg.col && reg.dim !== dim) { reg.dim = dim; for (const [e, a, c] of reg.col) e.setAttribute(a, dim ? dimColor(c) : c); }
   });
@@ -319,8 +348,9 @@ function initTooltip() {
 }
 export const hideTip = () => { if (tip) tip.style.display = "none"; };
 function tipHTML(r) {
+  const part = r.of && !r.kind ? r : null; if (part) r = byId[r.of];                       // a part of a nation shows the nation itself
   const s = r.stats || {}, gv = GOV[r.id], rk = rankOf(r, "rate");
-  const sub = [r.of ? `Territory of ${byId[r.of].name}` : r.kind ? `Resistance in ${byId[r.in].name}` : r.tag || null,
+  const sub = [part ? `${part.name}: part of ${r.name}` : r.kind ? `Resistance in ${byId[r.in].name}` : r.tag || null,
     gv && gv.gov ? gv.gov : null, gv && gv.leader ? "ruled by " + gv.leader : null, rk ? `#${rk.rank} of ${rk.of}` : null].filter(Boolean);
   const est = estimate(r);
   const st = [["Rate", s.rate], ["Mil.", s.m], ["Econ.", s.e], ["People", est ? short(est.pop) : null]].filter(([, v]) => v != null);
@@ -333,7 +363,7 @@ export function redrawArcs(list) {
   const regs = new Set();
   for (const i of list) { if (borderEls[i]) borderEls[i].forEach(p => p.setAttribute("d", arcD(i))); (ed.arcOwners[i] || []).forEach(id => regs.add(id)); }
   for (const id of regs) { const r = byId[id]; r.d = regionD(r); r.els.forEach(p => p.setAttribute("d", r.d)); }
-  if (highlighted && regs.has(highlighted)) selPath.setAttribute("d", byId[highlighted].d);
+  if (highlighted && [...regs].some(x => x === highlighted || byId[x]?.of === highlighted)) selPath.setAttribute("d", selD(highlighted));
 }
 /* region outlines for an arbitrary set of arcs (used for timeline thumbnails) */
 export function regionPathsFor(arcs) {

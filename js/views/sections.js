@@ -5,8 +5,9 @@ export const SECTIONS = [
   { k: "rankings", label: "Rankings", ico: "trophy", desc: "Power rankings and head-to-head comparisons", key: "3" },
   { k: "characters", label: "Characters", ico: "users", desc: "Rulers, generals and heroes", key: "4" },
   { k: "diplomacy", label: "Diplomacy", ico: "swords", desc: "Wars, alliances and relations", key: "5" },
-  { k: "history", label: "History", ico: "history", desc: "The archive of saved moments", key: "6" },
-  { k: "encyclopedia", label: "Encyclopedia", ico: "book", desc: "Browse everything in one place", key: "7" },
+  { k: "news", label: "News", ico: "news", desc: "Declarations, treaties and events, year by year", key: "6" },
+  { k: "history", label: "History", ico: "history", desc: "The archive of saved moments", key: "7" },
+  { k: "encyclopedia", label: "Encyclopedia", ico: "book", desc: "Browse everything in one place", key: "8" },
 ];
 /* which section a route belongs to (for highlighting the nav) */
 export const sectionOf = name => ({ nation: "nations", character: "characters", compare: "rankings", war: "diplomacy" }[name] || name);

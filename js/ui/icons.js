@@ -66,6 +66,10 @@ const P = {
   external: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
   filter: '<path d="M3.5 5h17l-6.5 8v6l-4-2v-4L3.5 5Z"/>',
   sort: '<path d="M7 4v16M3.5 16.5 7 20l3.5-3.5M17 20V4M13.5 7.5 17 4l3.5 3.5"/>',
+  news: '<path d="M4 5h13v14H6.5A2.5 2.5 0 0 1 4 16.5V5Z"/><path d="M17 9h3v8a2 2 0 0 1-4 0"/><path d="M7.5 8.5h6M7.5 12h6M7.5 15.5h4"/>',
+  megaphone: '<path d="M3.5 10v4h3l8 4.5v-13l-8 4.5h-3Z"/><path d="M6.5 14l1.2 5h2.6l-1-4.3M18 9.5a3.5 3.5 0 0 1 0 5"/>',
+  handshake: '<path d="m11 7-2.5-2L3 9.5l5.5 6"/><path d="m13 7 2.5-2L21 9.5l-6 6.5"/><path d="M8.5 15.5 11 18c.8.8 2 .8 2.8 0l3.2-3.4M11 7l-2.6 2.6a1.4 1.4 0 0 0 2 2L13 9l3 3"/>',
+  vote: '<path d="M4 14h16v6H4z"/><path d="m8 11 3 3 6-7"/><path d="M8 17h8"/>',
   dot: '<circle cx="12" cy="12" r="4" fill="currentColor"/>',
 };
 

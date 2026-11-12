@@ -19,7 +19,7 @@ function rowHTML(r, lvl = 0) {
   const v = sortKey === "caps" ? (caps(r).length || null) : st[key];
   const mx = sortKey === "caps" ? Math.max(1, ...R.map(x => caps(x).length)) : MAX[key];
   const lbl = { rate: "R", m: "M", e: "E" }, others = ["rate", "m", "e"].filter(k => k !== key && st[k] != null).map(k => `${lbl[k]} ${st[k]}`).join(" · ");
-  const nc = caps(r).length, tags = [GOV[r.id]?.gov, nc ? `${nc} capital${nc > 1 ? "s" : ""}` : null, r.tag, r.kind ? "Resistance" : null, r.of && !r.kind ? "Territory" : null].filter(Boolean);
+  const nc = caps(r).length, tags = [GOV[r.id]?.gov, nc ? `${nc} capital${nc > 1 ? "s" : ""}` : null, r.tag, r.kind ? "Resistance" : null, r.of && !r.kind ? "Part of nation" : null].filter(Boolean);
   const unit = sortKey === "caps" ? "capitals" : { rate: "Rate", m: "Military", e: "Economy" }[key];
   return `<li><a class="lrow lv${lvl}" href="${href("nation", r.id)}" aria-label="${esc(r.name)}${v != null ? `, ${unit} ${v}` : ""}">
     ${emblem(r, lvl ? 22 : 28)}
@@ -49,7 +49,7 @@ function render(args, opts) {
       <div class="tools-row"><div class="seg" role="group" aria-label="Show">${FILTERS.map(([k, l]) => `<button type="button" data-filter="${k}" aria-pressed="${filter === k}">${l}</button>`).join("")}</div>
       <div class="seg" role="group" aria-label="Sort by">${SORTS.map(([k, l]) => `<button type="button" data-sort="${k}" aria-pressed="${sortKey === k}" class="gold">${l}</button>`).join("")}</div></div>`,
   }) + `<div class="vb vb-tight"><ul class="rows" id="list">${listHTML()}</ul>
-    <p class="foot-note">${icon("info", "i-xs")}Territories and resistance movements are listed under the nation they belong to. Tap a row to open its dossier.</p></div>`;
+    <p class="foot-note">${icon("info", "i-xs")}Parts of a nation (like RUC or Shero U.) and resistance movements are listed under the nation they belong to. Tapping a part opens its nation's dossier.</p></div>`;
   mount(html, opts, { size: "std", sheetTo: "full" });
 }
 
